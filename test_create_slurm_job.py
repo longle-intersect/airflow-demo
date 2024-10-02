@@ -29,8 +29,7 @@ ssh_hook = SSHHook(ssh_conn_id="slurm_ssh_connection")
 
 # Python function to create SLURM script
 def create_slurm_script(**kwargs):
-    script_content = """
-#!/bin/bash
+    script_content = """#!/bin/bash
 #SBATCH -n 1
 #SBATCH --mem=500M
 #SBATCH -t 00:10:00
