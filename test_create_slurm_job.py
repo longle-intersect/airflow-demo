@@ -73,6 +73,14 @@ send_script = PythonOperator(
     dag=dag
 )
 
+# Define the task to test SSH connection
+test_ssh_connection = SSHOperator(
+    task_id='test_ssh_connection',
+    ssh_hook=ssh_hook,
+    command='echo "SSH connection successful!"',
+    dag=dag,
+)
+
 # Task to submit the SLURM job
 submit_job = SSHOperator(
     task_id='submit_job',
@@ -92,4 +100,4 @@ retrieve_output = SSHOperator(
 )
 
 # Set task dependencies
-create_script >> send_script >> submit_job >> retrieve_output
+create_script >> send_script >> test_ssh_connection >> submit_job >> retrieve_output
