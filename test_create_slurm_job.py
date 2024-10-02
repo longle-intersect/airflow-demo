@@ -81,14 +81,23 @@ test_ssh_connection = SSHOperator(
     dag=dag,
 )
 
-# Task to submit the SLURM job
-submit_job = SSHOperator(
-    task_id='submit_job',
+# Define the task to submit a SLURM job
+submit_slurm_job = SSHOperator(
+    task_id='submit_slurm_job',
     ssh_hook=ssh_hook,
-    command='sbatch /home/lelong/job_script/slurm_job.sh',
-    #do_xcom_push=True,
+    #ssh_conn_id='slurm_ssh_connection',
+    command='sbatch /home/lelong/job_script/sample_slurm.slurm',
     dag=dag,
 )
+
+# # Task to submit the SLURM job
+# submit_job = SSHOperator(
+#     task_id='submit_job',
+#     ssh_hook=ssh_hook,
+#     command='sbatch /home/lelong/job_script/slurm_job.sh',
+#     #do_xcom_push=True,
+#     dag=dag,
+# )
 
 # Task to retrieve the output
 retrieve_output = SSHOperator(
@@ -100,4 +109,4 @@ retrieve_output = SSHOperator(
 )
 
 # Set task dependencies
-create_script >> send_script >> test_ssh_connection >> submit_job >> retrieve_output
+create_script >> send_script >> test_ssh_connection >> submit_slurm_job >> retrieve_output
