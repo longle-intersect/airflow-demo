@@ -80,6 +80,7 @@ test_ssh_connection = SSHOperator(
     task_id='test_ssh_connection',
     ssh_hook=ssh_hook,
     command='echo "SSH connection successful!"',
+    do_xcom_push=True,
     dag=dag,
 )
 
