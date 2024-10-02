@@ -31,7 +31,7 @@ ssh_hook = SSHHook(ssh_conn_id="slurm_ssh_connection")
 def create_slurm_script(**kwargs):
     script_content = """#!/bin/bash
 #SBATCH --job-name=test_airflow_job
-#SBATCH --output=job_output_test.txt
+#SBATCH --output=./job_output_test.txt
 #SBATCH -n 1
 #SBATCH --mem=500M
 #SBATCH -t 00:10:00
