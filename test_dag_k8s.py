@@ -21,7 +21,7 @@ with DAG(
     print_task = KubernetesPodOperator(
         task_id='print_hello',
         name='print-hello-pod',
-        namespace='airflow',  # Replace with your namespace
+        namespace='airflow-test',  # Replace with your namespace
         image='python:3.8-slim',  # Use a lightweight image
         cmds=["python", "-c"],
         arguments=["print('Hello from Kubernetes!')"],
