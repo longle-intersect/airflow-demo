@@ -65,7 +65,7 @@ send_script = SSHOperator(
 submit_job = SSHOperator(
     task_id='submit_job',
     ssh_hook=ssh_hook,
-    command='sbatch /home/lelong/job_scripts/slurm_job.sh',
+    command='sbatch /home/lelong/job_script/slurm_job.sh',
     do_xcom_push=True,
     dag=dag,
 )
@@ -74,7 +74,7 @@ submit_job = SSHOperator(
 retrieve_output = SSHOperator(
     task_id='retrieve_output',
     ssh_hook=ssh_hook,
-    command='cat /home/lelong/job_scripts/job_output_$(squeue -u username --noheader | awk "{print $1}")',
+    command='cat /home/lelong/job_script/job_output_$(squeue -u username --noheader | awk "{print $1}")',
     do_xcom_push=True,
     dag=dag,
 )
