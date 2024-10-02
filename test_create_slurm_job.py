@@ -40,7 +40,7 @@ def create_slurm_script(**kwargs):
     sleep 10
     echo "Finishing at: $(date)"
     """
-    script_path = '/tmp/slurm_job.sh'
+    script_path = '/home/airflow/slurm_scripts/slurm_job.sh'
     with open(script_path, 'w') as file:
         file.write(script_content)
     return script_path
