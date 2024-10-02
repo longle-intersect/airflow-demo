@@ -56,7 +56,7 @@ create_script = PythonOperator(
 send_script = SSHOperator(
     task_id='send_script',
     ssh_hook=ssh_hook,
-    command="scp -o StrictHostKeyChecking=no /tmp/slurm_job.sh username@slurm_host:/home/lelong/job_scripts",
+    command="scp -o StrictHostKeyChecking=no /tmp/slurm_job.sh lelong@sdclogin01.irs.environment.nsw.gov.au:/home/lelong/job_scripts",
     do_xcom_push=True,
     dag=dag,
 )
