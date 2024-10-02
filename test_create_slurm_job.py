@@ -30,16 +30,15 @@ ssh_hook = SSHHook(ssh_conn_id="slurm_ssh_connection")
 # Python function to create SLURM script
 def create_slurm_script(**kwargs):
     script_content = """
-    #!/bin/bash
-    #SBATCH --job-name=test_job
-    #SBATCH --output=job_output_%j.txt
-    #SBATCH --ntasks=1
-    #SBATCH --time=10:00
-    echo "Running on host: $(hostname)"
-    echo "Starting at: $(date)"
-    sleep 10
-    echo "Finishing at: $(date)"
-    """
+#!/bin/bash
+#SBATCH -n 1
+#SBATCH --mem=500M
+#SBATCH -t 00:10:00
+
+# Specify the work to be done
+sleep 30
+echo "Welcome to SDC! I'm Long Le"
+"""
     script_path = '/home/airflow/slurm_scripts/slurm_job.sh'
     with open(script_path, 'w') as file:
         file.write(script_content)
