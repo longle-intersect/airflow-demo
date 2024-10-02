@@ -47,7 +47,7 @@ def create_slurm_script(**kwargs):
 
 def log_scp_command():
     import subprocess
-    command = "scp -o StrictHostKeyChecking=no -i /path/to/private_key /tmp/slurm_job.sh username@slurmhost:/home/lelong/job_scripts"
+    command = "scp -o StrictHostKeyChecking=no /home/airflow/slurm_scripts/slurm_job.sh lelong@sdclogin01.irs.environment.nsw.gov.au:/home/lelong/job_script"
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = process.communicate()
     print("STDOUT:", out)
