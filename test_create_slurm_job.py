@@ -45,6 +45,14 @@ def create_slurm_script(**kwargs):
         file.write(script_content)
     return script_path
 
+def log_scp_command():
+    import subprocess
+    command = "scp -o StrictHostKeyChecking=no -i /path/to/private_key /tmp/slurm_job.sh username@slurmhost:/home/lelong/job_scripts"
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = process.communicate()
+    print("STDOUT:", out)
+    print("STDERR:", err)
+
 create_script = PythonOperator(
     task_id='create_slurm_script',
     python_callable=create_slurm_script,
@@ -53,12 +61,18 @@ create_script = PythonOperator(
 )
 
 # Task to send script to SLURM server
-send_script = SSHOperator(
+#send_script = SSHOperator(
+#    task_id='send_script',
+#    ssh_hook=ssh_hook,
+#    command="scp -o StrictHostKeyChecking=no /home/airflow/slurm_scripts/slurm_job.sh lelong@sdclogin01.irs.environment.nsw.gov.au:/home/lelong/job_script",
+#    do_xcom_push=True,
+#    dag=dag,
+#)
+
+send_script = PythonOperator(
     task_id='send_script',
-    ssh_hook=ssh_hook,
-    command="scp -o StrictHostKeyChecking=no /home/airflow/slurm_scripts/slurm_job.sh lelong@sdclogin01.irs.environment.nsw.gov.au:/home/lelong/job_script",
-    do_xcom_push=True,
-    dag=dag,
+    python_callable=log_scp_command,
+    dag=dag
 )
 
 # Task to submit the SLURM job
