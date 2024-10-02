@@ -78,7 +78,7 @@ submit_job = SSHOperator(
     task_id='submit_job',
     ssh_hook=ssh_hook,
     command='sbatch /home/lelong/job_script/slurm_job.sh',
-    do_xcom_push=True,
+    #do_xcom_push=True,
     dag=dag,
 )
 
