@@ -30,6 +30,8 @@ ssh_hook = SSHHook(ssh_conn_id="slurm_ssh_connection")
 # Python function to create SLURM script
 def create_slurm_script(**kwargs):
     script_content = """#!/bin/bash
+#SBATCH --job-name=test_airflow_job
+#SBATCH --output=job_output_%j.txt
 #SBATCH -n 1
 #SBATCH --mem=500M
 #SBATCH -t 00:10:00
@@ -38,14 +40,14 @@ def create_slurm_script(**kwargs):
 sleep 30
 echo "Welcome to SDC! I'm Long Le"
 """
-    script_path = '/home/airflow/slurm_scripts/slurm_job.sh'
+    script_path = '/home/airflow/slurm_scripts/slurm_script.slurm'
     with open(script_path, 'w') as file:
         file.write(script_content)
     return script_path
 
 def log_scp_command():
     import subprocess
-    command = "scp -o StrictHostKeyChecking=no /home/airflow/slurm_scripts/slurm_job.sh lelong@sdclogin01.irs.environment.nsw.gov.au:/home/lelong/job_script"
+    command = "scp -o StrictHostKeyChecking=no /home/airflow/slurm_scripts/slurm_script.slurm lelong@sdclogin01.irs.environment.nsw.gov.au:/home/lelong/job_script"
     process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = process.communicate()
     print("STDOUT:", out)
@@ -86,7 +88,7 @@ submit_slurm_job = SSHOperator(
     task_id='submit_slurm_job',
     ssh_hook=ssh_hook,
     #ssh_conn_id='slurm_ssh_connection',
-    command='sbatch /home/lelong/job_script/sample_slurm.slurm',
+    command='sbatch /home/lelong/job_script/slurm_script.slurm',
     dag=dag,
 )
 
@@ -103,7 +105,7 @@ submit_slurm_job = SSHOperator(
 retrieve_output = SSHOperator(
     task_id='retrieve_output',
     ssh_hook=ssh_hook,
-    command='cat /home/lelong/job_script/job_output_$(squeue -u username --noheader | awk "{print $1}")',
+    command='cat /home/lelong/job_script/job_output_$(squeue -u lelong --noheader | awk "{print $1}")',
     do_xcom_push=True,
     dag=dag,
 )
