@@ -105,7 +105,7 @@ submit_slurm_job = SSHOperator(
 retrieve_output = SSHOperator(
     task_id='retrieve_output',
     ssh_hook=ssh_hook,
-    command='cat /home/lelong/job_script/job_output_test.txt',
+    command='cat /home/lelong/job_output_test.txt',
     do_xcom_push=True,
     dag=dag,
 )
