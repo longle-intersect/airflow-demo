@@ -3,7 +3,7 @@ from airflow.operators.python_operator import PythonOperator
 from datetime import datetime, timedelta
 import os
 import requests
-import zipfile
+import tarfile
 
 def download_data():
     url = "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
@@ -11,11 +11,15 @@ def download_data():
     
     os.makedirs(data_path, exist_ok=True)
     response = requests.get(url, stream=True)
-    with open(os.path.join(data_path, "cifar-10-python.tar.gz"), "wb") as file:
+
+    # Save the downloaded file
+    tar_path = os.path.join(data_path, "cifar-10-python.tar.gz")
+    with open(tar_path, "wb") as file:
         file.write(response.content)
 
-    with zipfile.ZipFile(os.path.join(data_path, "cifar-10-python.tar.gz"), "r") as zip_ref:
-        zip_ref.extractall(data_path)
+    # Extract the tar.gz file
+    with tarfile.open(tar_path, "r:gz") as tar_ref:
+        tar_ref.extractall(data_path)
 
 default_args = {
     "owner": "airflow",
