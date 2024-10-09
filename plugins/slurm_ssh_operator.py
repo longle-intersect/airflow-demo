@@ -79,8 +79,8 @@ class SlurmJobSensor(BaseSensorOperator):
             else:
                 # Fetch the output and error files
                 sftp_client = ssh_client.open_sftp()
-                output_file = f'/{self.script_name}_{job_id}.out'
-                error_file = f'/{self.script_name}_{job_id}.err'
+                output_file = 'test_job_error.out'
+                error_file = 'test_job_output.txt'
                 sftp_client.get(self.remote_path, output_file)
                 sftp_client.get(self.remote_path, error_file)
                 sftp_client.close()
