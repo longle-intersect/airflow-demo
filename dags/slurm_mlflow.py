@@ -36,15 +36,17 @@ ssh_hook = SSHHook(ssh_conn_id="yueyang")
 
 def create_slurm_script(**kwargs):
     script_content = """#!/bin/bash
-#SBATCH --job-name=test_airflow_job
+#SBATCH --job-name=test_mlflow_job
 #SBATCH --output=./job_output_test.txt
 #SBATCH -n 1
-#SBATCH --mem=500M
-#SBATCH -t 00:10:00
+#SBATCH --mem=1000M
+#SBATCH -t 00:20:00
 # Specify the work to be done
-sleep 30
-echo "Welcome to SDC! I'm Yueyang"
-
+module unload python
+module unload RSstandard
+. ~/venv/mlflow/bin/activate
+python train_diabetes.py
+deactivate
 """
     script_path = '/home/airflow/slurm_scripts/slurm_mlflow_script.slurm'
     with open(script_path, 'w') as file:
