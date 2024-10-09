@@ -25,13 +25,13 @@ def create_slurm_script(**kwargs):
 #SBATCH --mem=4G
 
 # Load necessary modules
-module load gdal  # Adjust the version as necessary
+# module load gdal  # Adjust the version as necessary
 
 # Activate a Python virtual environment if you use one
-source testing_dataops/bin/activate
+# source testing_dataops/bin/activate
 
 # Ensure all Python dependencies are installed
-pip install numpy==1.20.0 requests geopandas==0.10.2 rasterstats==0.15.0
+# pip install numpy==1.20.0 requests geopandas==0.10.2 rasterstats==0.15.0
 
 # Define command line arguments
 json_data = "https://storage.googleapis.com/gcp-ml-88/response_1641976752143.json"
