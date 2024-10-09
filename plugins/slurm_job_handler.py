@@ -15,21 +15,30 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
         self.script_name = script_name
         self.remote_path = remote_path
         self.local_path = local_path
+        self.job_id = None
 
-    def execute(self, context):
-        job_id = self._submit_job()
-        return job_id
+    #def execute(self, context):
+    #    job_id = self._submit_job()
+    #    return job_id
 
     def poke(self, context):
-        job_id = context['ti'].xcom_pull(task_ids=self.task_id)
-        job_done = self._check_job_status(job_id)
+
+        if not self.job_id:
+            self.job_id = self._submit_job()
+            return False
+        
+        #job_id = context['ti'].xcom_pull(task_ids=self.task_id)
+        job_done = self._check_job_status()
         if job_done:
-            self.log.info(f"Job {job_id} has completed or does not exist")
-            output_content, error_content = self._fetch_job_files(job_id)
-            self.log.info(f"Output of {job_id}: {output_content}")
+            self.log.info(f"Job {self.job_id} has completed or does not exist")
+            output_content, error_content = self._fetch_job_files()
+            context['task_instance'].xcom_push(key='output_content', value=output_content)
+            context['task_instance'].xcom_push(key='error_content', value=error_content)
+            self.log.info(f"Output of {self.job_id}: {output_content}")
+            return True
         else:
-            self.log.info(f"Job {job_id} is still running")
-        return job_done
+            self.log.info(f"Job {self.job_id} is still running")
+            return False
 
     def _submit_job(self):
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)
@@ -49,10 +58,10 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             job_id = job_info.split()[-1]  # Assumes Slurm outputs "Submitted batch job <job_id>"
             return job_id
 
-    def _check_job_status(self, job_id):
+    def _check_job_status(self):
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)
         with ssh_hook.get_conn() as ssh_client:
-            command = f'squeue -j {job_id} -o "%T"'
+            command = f'squeue -j {self.job_id} -o "%T"'
             stdin, stdout, stderr = ssh_client.exec_command(command)
             result = stdout.read().decode('utf-8').strip()
             self.log.info(f"Checking result of Slurm job ID: {result}")
@@ -61,20 +70,20 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             lines = result.splitlines()
             if len(lines) > 1:  # First line is headers, subsequent lines are job info
                 _, _, _, _, status, _, _, _ = lines[1].split()
-                self.log.info(f"Current status of job {job_id}: {status}")
+                self.log.info(f"Current status of job {self.job_id}: {status}")
                 if status in ['R', 'PD']:
                     return False
             else:
                 return True
 
-    def _fetch_job_files(self, job_id):
+    def _fetch_job_files(self,):
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)
         with ssh_hook.get_conn() as ssh_client:
             sftp_client = ssh_client.open_sftp()
             remote_output_path = f'{self.remote_path}/{self.script_name}.out'
             remote_error_path = f'{self.remote_path}/{self.script_name}.err'
-            local_output_path = f'{self.local_path}/{self.script_name}_{job_id}.out'
-            local_error_path = f'{self.local_path}/{self.script_name}_{job_id}.err'
+            local_output_path = f'{self.local_path}/{self.script_name}_{self.job_id}.out'
+            local_error_path = f'{self.local_path}/{self.script_name}_{self.job_id}.err'
             sftp_client.get(remote_output_path, local_output_path)
             sftp_client.get(remote_error_path, local_error_path)
             sftp_client.close()
