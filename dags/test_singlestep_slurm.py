@@ -49,7 +49,6 @@ with DAG('test_slurm_single_step',
         dag=dag,
     )
 
-    """
     handle_slurm_job = SlurmJobHandlingSensor(
         task_id='handle_slurm_job',
         ssh_conn_id='slurm_ssh_connection',
@@ -60,5 +59,5 @@ with DAG('test_slurm_single_step',
         timeout=3600,  # max time in seconds for the sensor to run
         poke_interval=30  # interval in seconds between checks
     )
-    """
-    create_script
+
+    create_script >> handle_slurm_job
