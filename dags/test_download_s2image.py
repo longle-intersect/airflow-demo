@@ -49,7 +49,7 @@ python /home/lelong/workspace/s2a_pipeline/sentinel2-pipeline/process_img/proces
 
 with DAG('test_download_s2image',
          default_args=default_args,
-         description='A single step DAG to submit and monitor Slurm jobs via SSH',
+         description='A sample DAG to download S2 Imagery',
          schedule_interval=None,
          start_date=datetime(2023, 1, 1),
          catchup=False) as dag:
