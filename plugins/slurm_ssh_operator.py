@@ -63,12 +63,19 @@ class SlurmJobSensor(BaseSensorOperator):
             stdin, stdout, stderr = ssh_client.exec_command(command)
             result = stdout.read().decode('utf-8').strip()
 
-            self.log.info(f"Checking stdin of Slurm job ID: {stdin}")
-            self.log.info(f"Checking error of Slurm job ID: {stderr}")
+            #self.log.info(f"Checking stdin of Slurm job ID: {stdin}")
+            #self.log.info(f"Checking error of Slurm job ID: {stderr}")
             self.log.info(f"Checking result of Slurm job ID: {result}")
 
-            if 'PD' in result or 'R' in result:
-                self.log.info(f"Job {job_id} is still running")
-                return False
-            self.log.info(f"Job {job_id} has completed or does not exist")
-            return True
+            if result:
+                # Parse the result, expected to have headers on the first call
+                lines = result.splitlines()
+                if len(lines) > 1:  # First line is headers, subsequent lines are job info
+                    _, _, _, _, status, _, _, _ = lines[1].split()
+                    self.log.info(f"Current status of job {job_id}: {status}")
+                    if status in ['R', 'PD']:
+                        self.log.info(f"Job {job_id} is still running")
+                        return False
+            else:
+                self.log.info(f"Job {job_id} has completed or does not exist")
+                return True
