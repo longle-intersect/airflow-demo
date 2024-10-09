@@ -86,7 +86,7 @@ def create_slurm_script(**kwargs):
 #SBATCH -t 00:10:00
 
 # Specify the work to be done
-sleep 15
+sleep 30
 echo "Welcome to SDC! I'm Long Le"
 """
     script_path = '/home/airflow/slurm_scripts/test_slurm_ssh.slurm'
@@ -113,7 +113,7 @@ with DAG('slurm_ssh_workflow',
     submit_slurm_job = SlurmSSHTaskOperator(
         task_id='submit_slurm_job',
         ssh_conn_id='slurm_ssh_connection',
-        script_name='slurm_script.slurm',
+        script_name='test_slurm_ssh.slurm',
         remote_path='/home/lelong/job_script'
     )
 
