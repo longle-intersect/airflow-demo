@@ -48,9 +48,17 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             command = f'squeue -j {job_id} -o "%T"'
             stdin, stdout, stderr = ssh_client.exec_command(command)
             result = stdout.read().decode('utf-8').strip()
-            if 'COMPLETED' in result or 'FAILED' in result or 'CANCELLED' in result:
-                return True
-            return False
+            self.log.info(f"Checking result of Slurm job ID: {result}")
+
+            # Parse the result, expected to have headers on the first call
+            lines = result.splitlines()
+            if len(lines) > 1:  # First line is headers, subsequent lines are job info
+                _, _, _, _, status, _, _, _ = lines[1].split()
+                self.log.info(f"Current status of job {job_id}: {status}")
+                if status in ['R', 'PD']:
+                    self.log.info(f"Job {job_id} is still running")
+                    return False
+            else:
 
     def _fetch_job_files(self, job_id):
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)

@@ -80,9 +80,9 @@ class SlurmJobSensor(BaseSensorOperator):
                 else:
                     # Fetch the output and error files
                     sftp_client = ssh_client.open_sftp()
-                    output_file = f'{self.remote_path}/test_job_error.out'
+                    output_file = f'{self.remote_path}/test_job_error.txt'
                     error_file = f'{self.remote_path}/test_job_output.txt'
-                    local_output_path = '/home/airflow/slurm_scripts/test_job_error.out'
+                    local_output_path = '/home/airflow/slurm_scripts/test_job_error.txt'
                     local_error_path = '/home/airflow/slurm_scripts/test_job_output.txt'
                     sftp_client.get(output_file, local_output_path)
                     sftp_client.get(error_file, local_error_path)
