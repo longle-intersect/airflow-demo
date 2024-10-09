@@ -35,9 +35,9 @@ echo "Welcome to SDC! I'm Long Le"
     return script_path
 
 
-with DAG('test_slurm_single_step',
+with DAG('test_slurm_multi_step',
          default_args=default_args,
-         description='A single step DAG to submit and monitor Slurm jobs via SSH',
+         description='A multi-step DAG to submit and monitor Slurm jobs via SSH',
          schedule_interval=None,
          start_date=datetime(2023, 1, 1),
          catchup=False) as dag:
