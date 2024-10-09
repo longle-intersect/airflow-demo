@@ -19,7 +19,7 @@ default_args = {
 
 # Initialize the DAG
 dag = DAG(
-    'slurm_job_submission',
+    'slurm_mlflow',
     default_args=default_args,
     description='Submit SLURM job and fetch results',
     schedule_interval=None,
