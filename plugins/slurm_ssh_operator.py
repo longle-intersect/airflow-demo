@@ -42,11 +42,12 @@ class SlurmSSHTaskOperator(BaseOperator):
 
 class SlurmJobSensor(BaseSensorOperator):
     @apply_defaults
-    def __init__(self, ssh_conn_id, task_ids, job_id, *args, **kwargs):
+    def __init__(self, ssh_conn_id, task_ids, job_id, remote_path, *args, **kwargs):
         super(SlurmJobSensor, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
         self.task_ids = task_ids
         self.job_id = job_id
+        self.remote_path = remote_path
 
     def poke(self, context):
         # Pull job ID from XCom
@@ -76,5 +77,16 @@ class SlurmJobSensor(BaseSensorOperator):
                     self.log.info(f"Job {job_id} is still running")
                     return False
             else:
+                # Fetch the output and error files
+                sftp_client = ssh_client.open_sftp()
+                output_file = f'/{self.script_name}_{job_id}.out'
+                error_file = f'/{self.script_name}_{job_id}.err'
+                sftp_client.get(self.remote_path, output_file)
+                sftp_client.get(self.remote_path, error_file)
+                sftp_client.close()
+
+                self.log.info(f"Output and error files retrieved: {output_file}, {error_file}")
                 self.log.info(f"Job {job_id} has completed or does not exist")
-                return True
+                
+                return output_file
+            
