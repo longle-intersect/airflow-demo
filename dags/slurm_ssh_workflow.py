@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-from slurm_ssh_operator import SlurmSSHTaskOperator, SlurmJobSensor
+from plugins.slurm_ssh_operator import SlurmSSHTaskOperator, SlurmJobSensor
 from airflow.operators.python import PythonOperator
 
 default_args = {
