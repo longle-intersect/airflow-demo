@@ -16,7 +16,7 @@ default_args = {
 }
 
 # Python function to create SLURM script
-def create_slurm_script(**kwargs):
+def create_download_script(**kwargs):
     script_content = """#!/bin/bash
 #SBATCH --job-name=process_images
 #SBATCH --output=./job_script/test_job_output.txt
@@ -46,6 +46,32 @@ python /home/lelong/workspace/s2a_pipeline/sentinel2-pipeline/process_img/proces
         file.write(script_content)
     return script_path
 
+
+# Python function to create SLURM script
+def create_processing_script(**kwargs):
+    script_content = f"""#!/bin/bash
+#SBATCH --job-name=process_images
+#SBATCH --output=./job_script/test_job_output.txt
+#SBATCH --error=./job_script/test_job_error.txt
+#SBATCH --ntasks=1
+#SBATCH --mem=4G
+
+# Load necessary modules
+# module load gdal  # Adjust the version as necessary
+
+# Activate a Python virtual environment if you use one
+# source testing_dataops/bin/activate
+
+# Ensure all Python dependencies are installed
+# pip install numpy==1.20.0 requests geopandas==0.10.2 rasterstats==0.15.0
+
+# Run the Python script
+python /home/lelong/workspace/s2a_pipeline/sentinel2-pipeline/temporal_stats/temporal_stats.py --input_path {input_path} --output_path /home/lelong/temp_data/sentinel2_step2
+"""
+    script_path = '/home/airflow/slurm_scripts/test_process_s2image.slurm'
+    with open(script_path, 'w') as file:
+        file.write(script_content)
+    return script_path
 
 with DAG('test_download_s2image',
          default_args=default_args,

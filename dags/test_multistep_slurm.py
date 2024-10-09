@@ -118,4 +118,4 @@ with DAG('test_slurm_multi_step',
         poke_interval=30  # interval in seconds between checks
     )
 
-    create_script_1 >> handle_slurm_job_1 >> create_script_2 >> handle_slurm_job_2 >> create_script_3 >> handle_slurm_job_3
+    create_script_1 >> handle_slurm_job_1 >> create_script_2 >> handle_slurm_job_2 >> create_script_3 >> handle_slurm_job_3 >> create_script_4 >> handle_slurm_job_4
