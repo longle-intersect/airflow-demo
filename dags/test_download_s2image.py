@@ -34,12 +34,12 @@ def create_slurm_script(**kwargs):
 # pip install numpy==1.20.0 requests geopandas==0.10.2 rasterstats==0.15.0
 
 # Define command line arguments
-json_data = "https://storage.googleapis.com/gcp-ml-88/response_1641976752143.json"
-shp_fname = "https://storage.googleapis.com/gcp-ml-88/T31TCJ_MIS_BTH"
-output_path = "/home/lelong/temp_data/sentinel2"
+#json_data = "https://storage.googleapis.com/gcp-ml-88/response_1641976752143.json"
+#shp_fname = "https://storage.googleapis.com/gcp-ml-88/T31TCJ_MIS_BTH"
+#output_path = "/home/lelong/temp_data/sentinel2"
 
 # Run the Python script
-python /home/lelong/workspace/s2a_pipeline/sentinel2-pipeline/process_img/process_img.py --json_data $JSON_DATA --shp_fname $SHP_FNAME --output_path $OUTPUT_PATH
+python /home/lelong/workspace/s2a_pipeline/sentinel2-pipeline/process_img/process_img.py --json_data https://storage.googleapis.com/gcp-ml-88/response_1641976752143.json --shp_fname https://storage.googleapis.com/gcp-ml-88/T31TCJ_MIS_BTH --output_path /home/lelong/temp_data/sentinel2
 """
     script_path = '/home/airflow/slurm_scripts/test_download_s2image.slurm'
     with open(script_path, 'w') as file:
