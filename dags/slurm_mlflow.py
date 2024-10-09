@@ -29,7 +29,7 @@ dag = DAG(
 
 # SSH Hook
 
-ssh_hook = SSHHook(ssh_conn_id="slurm_ssh_connection")
+ssh_hook = SSHHook(ssh_conn_id="yueyang")
 
 
 # Python function to create SLURM script
