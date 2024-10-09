@@ -55,14 +55,14 @@ with DAG('test_download_s2image',
          catchup=False) as dag:
 
     create_script = PythonOperator(
-        task_id='prepare_script',
+        task_id='create_slurm_script',
         python_callable=create_slurm_script,
         provide_context=True,
         dag=dag,
     )
 
     handle_slurm_job = SlurmJobHandlingSensor(
-        task_id='download_s2_imagery',
+        task_id='handle_slurm_job',
         ssh_conn_id='slurm_ssh_connection',
         script_name='test_download_s2image.slurm',
         remote_path='/home/lelong/job_script',
