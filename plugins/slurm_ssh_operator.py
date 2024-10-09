@@ -62,8 +62,9 @@ class SlurmJobSensor(BaseSensorOperator):
             command = f'squeue -j {self.job_id}'
             stdin, stdout, stderr = ssh_client.exec_command(command)
             result = stdout.read().decode('utf-8').strip()
+            self.log.info(f"Checking result of Slurm job ID: {result}")
             if 'PD' in result or 'R' in result:
-                self.log.info(f"Job {self.job_id} is still running")
+                self.log.info(f"Job {job_id} is still running")
                 return False
-            self.log.info(f"Job {self.job_id} has completed or does not exist")
+            self.log.info(f"Job {job_id} has completed or does not exist")
             return True
