@@ -61,7 +61,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
     def _check_job_status(self):
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)
         with ssh_hook.get_conn() as ssh_client:
-            command = f'squeue -j {self.job_id} -o "%T"'
+            command = f'squeue -j {self.job_id}' # -o "%T"
             stdin, stdout, stderr = ssh_client.exec_command(command)
             result = stdout.read().decode('utf-8').strip()
             self.log.info(f"Checking result of Slurm job ID: {result}")
