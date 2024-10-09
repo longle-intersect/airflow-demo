@@ -62,6 +62,7 @@ with DAG('slurm_ssh_workflow',
     monitor_slurm_job = SlurmJobSensor(
         task_id='monitor_slurm_job',
         ssh_conn_id='slurm_ssh_connection',
+        task_ids = 'submit_slurm_job',
         job_id="{{ task_instance.xcom_pull(task_ids='submit_slurm_job') }}"
     )
 

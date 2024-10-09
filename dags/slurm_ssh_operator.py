@@ -42,12 +42,21 @@ class SlurmSSHTaskOperator(BaseOperator):
 
 class SlurmJobSensor(BaseSensorOperator):
     @apply_defaults
-    def __init__(self, ssh_conn_id, job_id, *args, **kwargs):
+    def __init__(self, ssh_conn_id, task_ids, job_id, *args, **kwargs):
         super(SlurmJobSensor, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
+        self.task_ids = task_ids
         self.job_id = job_id
 
     def poke(self, context):
+        # Pull job ID from XCom
+        job_id = context['task_instance'].xcom_pull(task_ids=self.task_ids)
+        if not job_id:
+            self.log.info("Job ID not found in XCom.")
+            return False
+
+        self.log.info(f"Checking status of Slurm job ID: {job_id}")
+
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)
         with ssh_hook.get_conn() as ssh_client:
             command = f'squeue -j {self.job_id}'
