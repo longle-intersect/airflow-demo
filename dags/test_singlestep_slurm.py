@@ -39,7 +39,7 @@ with DAG('test_slurm_single_step',
          default_args=default_args,
          description='A single step DAG to submit and monitor Slurm jobs via SSH',
          schedule_interval=None,
-         start_date=datetime(2024, 10, 10),
+         start_date=datetime(2023, 1, 1),
          catchup=False) as dag:
 
     create_script = PythonOperator(
