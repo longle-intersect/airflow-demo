@@ -9,11 +9,12 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
     template_fields = ('script_name', 'remote_path')
 
     @apply_defaults
-    def __init__(self, ssh_conn_id, script_name, remote_path, *args, **kwargs):
+    def __init__(self, ssh_conn_id, script_name, remote_path, local_path, *args, **kwargs):
         super(SlurmJobHandlingSensor, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
         self.script_name = script_name
         self.remote_path = remote_path
+        self.local_path = local_path
 
     def execute(self, context):
         job_id = self._submit_job()
@@ -23,16 +24,20 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
         job_id = context['ti'].xcom_pull(task_ids=self.task_id)
         job_done = self._check_job_status(job_id)
         if job_done:
-            self._fetch_job_files(job_id)
+            self.log.info(f"Job {job_id} has completed or does not exist")
+            output_content, error_content = self._fetch_job_files(job_id)
+            self.log.info(f"Output of {job_id}: {output_content}")
+        else:
+            self.log.info(f"Job {job_id} is still running")
         return job_done
 
     def _submit_job(self):
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)
         with ssh_hook.get_conn() as ssh_client:
             remote_script_path = f'{self.remote_path}/{self.script_name}'
-            remote_output_path = f'{self.remote_path}/{self.script_name}.out'
-            remote_error_path = f'{self.remote_path}/{self.script_name}.err'
-            local_script_path = f'/home/airflow/slurm_scripts/{self.script_name}'
+            remote_output_path = f'{self.remote_path}/{self.script_name}.txt'
+            remote_error_path = f'{self.remote_path}/{self.script_name}.txt'
+            local_script_path = f'{self.local_path}/{self.script_name}'
 
             sftp_client = ssh_client.open_sftp()
             sftp_client.put(local_script_path, remote_script_path)
@@ -58,10 +63,8 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
                 _, _, _, _, status, _, _, _ = lines[1].split()
                 self.log.info(f"Current status of job {job_id}: {status}")
                 if status in ['R', 'PD']:
-                    self.log.info(f"Job {job_id} is still running")
                     return False
             else:
-                self.log.info(f"Job {job_id} has completed or does not exist")
                 return True
 
     def _fetch_job_files(self, job_id):
@@ -74,5 +77,14 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             local_error_path = f'/tmp/{self.script_name}_{job_id}.err'
             sftp_client.get(remote_output_path, local_output_path)
             sftp_client.get(remote_error_path, local_error_path)
+
+            # Read the contents of the downloaded files
+            with open(local_output_path, 'r') as file_out:
+                output_content = file_out.read()
+            with open(local_error_path, 'r') as file_err:
+                error_content = file_err.read()
+
             sftp_client.close()
             self.log.info(f"Output and error files retrieved: {local_output_path}, {local_error_path}")
+
+            return output_content, error_content

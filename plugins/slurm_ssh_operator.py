@@ -86,9 +86,13 @@ class SlurmJobSensor(BaseSensorOperator):
                     local_error_path = '/home/airflow/slurm_scripts/test_job_output.txt'
                     sftp_client.get(output_file, local_output_path)
                     sftp_client.get(error_file, local_error_path)
-                    output_content = sftp_client.open(output_file).read().decode('utf-8')
-                    error_content = sftp_client.open(error_file).read().decode('utf-8')
                     sftp_client.close()
+
+                    # Read the contents of the downloaded files
+                    with open(local_output_path, 'r') as file_out:
+                        output_content = file_out.read()
+                    with open(local_error_path, 'r') as file_err:
+                        error_content = file_err.read()
 
                     self.log.info(f"Output and error files retrieved: {output_file}, {error_file}")
                     self.log.info(f"Job {job_id} has completed or does not exist")
