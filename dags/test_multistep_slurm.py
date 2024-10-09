@@ -27,7 +27,7 @@ def create_slurm_script(**kwargs):
 
 # Specify the work to be done
 sleep {kwargs['sec']}
-echo "Welcome to SDC! I'm Long Le"
+echo "{kwargs['out_text']}"
 """
     script_path = f'/home/airflow/slurm_scripts/{kwargs['script_name']}'
     with open(script_path, 'w') as file:
@@ -45,7 +45,7 @@ with DAG('test_slurm_multi_step',
     create_script_1 = PythonOperator(
         task_id='create_slurm_script_1',
         python_callable=create_slurm_script,
-        op_kwargs={'script_name': 'test_script_1.slurm', 'sec': '30'},
+        op_kwargs={'script_name': 'test_script_1.slurm', 'sec': '30', 'out_text': "Finish task 1"},
         provide_context=True,
         dag=dag,
     )
@@ -64,7 +64,7 @@ with DAG('test_slurm_multi_step',
     create_script_2 = PythonOperator(
         task_id='create_slurm_script_2',
         python_callable=create_slurm_script,
-        op_kwargs={'script_name': 'test_script_2.slurm', 'sec': '15'},
+        op_kwargs={'script_name': 'test_script_2.slurm', 'sec': '15', 'out_text': "Finish task 2"},
         provide_context=True,
         dag=dag,
     )
@@ -83,7 +83,7 @@ with DAG('test_slurm_multi_step',
     create_script_3 = PythonOperator(
         task_id='create_slurm_script_3',
         python_callable=create_slurm_script,
-        op_kwargs={'script_name': 'test_script_3.slurm', 'sec': '40'},
+        op_kwargs={'script_name': 'test_script_3.slurm', 'sec': '40', 'out_text': "Finish task 3"},
         provide_context=True,
         dag=dag,
     )
@@ -102,7 +102,7 @@ with DAG('test_slurm_multi_step',
     create_script_4 = PythonOperator(
         task_id='create_slurm_script_4',
         python_callable=create_slurm_script,
-        op_kwargs={'script_name': 'test_script_4.slurm', 'sec': '20'},
+        op_kwargs={'script_name': 'test_script_4.slurm', 'sec': '20', 'out_text': "Finish task 4"},
         provide_context=True,
         dag=dag,
     )
