@@ -59,34 +59,38 @@ class SlurmJobSensor(BaseSensorOperator):
         self.log.info(f"Checking status of Slurm job ID: {job_id}")
 
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)
-        with ssh_hook.get_conn() as ssh_client:
-            command = f'squeue -j {job_id}'
-            stdin, stdout, stderr = ssh_client.exec_command(command)
-            result = stdout.read().decode('utf-8').strip()
+        try:
+            with ssh_hook.get_conn() as ssh_client:
+                command = f'squeue -j {job_id}'
+                stdin, stdout, stderr = ssh_client.exec_command(command)
+                result = stdout.read().decode('utf-8').strip()
 
-            #self.log.info(f"Checking stdin of Slurm job ID: {stdin}")
-            #self.log.info(f"Checking error of Slurm job ID: {stderr}")
-            self.log.info(f"Checking result of Slurm job ID: {result}")
+                #self.log.info(f"Checking stdin of Slurm job ID: {stdin}")
+                #self.log.info(f"Checking error of Slurm job ID: {stderr}")
+                self.log.info(f"Checking result of Slurm job ID: {result}")
 
-            # Parse the result, expected to have headers on the first call
-            lines = result.splitlines()
-            if len(lines) > 1:  # First line is headers, subsequent lines are job info
-                _, _, _, _, status, _, _, _ = lines[1].split()
-                self.log.info(f"Current status of job {job_id}: {status}")
-                if status in ['R', 'PD']:
-                    self.log.info(f"Job {job_id} is still running")
-                    return False
-            else:
-                # Fetch the output and error files
-                sftp_client = ssh_client.open_sftp()
-                output_file = 'test_job_error.out'
-                error_file = 'test_job_output.txt'
-                sftp_client.get(self.remote_path, output_file)
-                sftp_client.get(self.remote_path, error_file)
-                sftp_client.close()
+                # Parse the result, expected to have headers on the first call
+                lines = result.splitlines()
+                if len(lines) > 1:  # First line is headers, subsequent lines are job info
+                    _, _, _, _, status, _, _, _ = lines[1].split()
+                    self.log.info(f"Current status of job {job_id}: {status}")
+                    if status in ['R', 'PD']:
+                        self.log.info(f"Job {job_id} is still running")
+                        return False
+                else:
+                    # Fetch the output and error files
+                    sftp_client = ssh_client.open_sftp()
+                    output_file = 'test_job_error.out'
+                    error_file = 'test_job_output.txt'
+                    sftp_client.get(self.remote_path, output_file)
+                    sftp_client.get(self.remote_path, error_file)
+                    sftp_client.close()
 
-                self.log.info(f"Output and error files retrieved: {output_file}, {error_file}")
-                self.log.info(f"Job {job_id} has completed or does not exist")
+                    self.log.info(f"Output and error files retrieved: {output_file}, {error_file}")
+                    self.log.info(f"Job {job_id} has completed or does not exist")
+                    
+                    return output_file
                 
-                return output_file
-            
+        except IOError as e:
+            self.log.error(f"Error fetching files: {str(e)}")
+            raise e
