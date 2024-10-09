@@ -3,6 +3,8 @@ from airflow.sensors.base_sensor_operator import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
 import time
 
+local_path = '/home/airflow/slurm_scripts/'
+
 class SlurmJobHandlingSensor(BaseSensorOperator):
     template_fields = ('script_name', 'remote_path')
 
@@ -59,6 +61,8 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
                     self.log.info(f"Job {job_id} is still running")
                     return False
             else:
+                self.log.info(f"Job {job_id} has completed or does not exist")
+                return True
 
     def _fetch_job_files(self, job_id):
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)

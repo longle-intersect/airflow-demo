@@ -92,8 +92,9 @@ class SlurmJobSensor(BaseSensorOperator):
 
                     self.log.info(f"Output and error files retrieved: {output_file}, {error_file}")
                     self.log.info(f"Job {job_id} has completed or does not exist")
+                    self.log.info(f"Output of {job_id}: {output_content}")
                     
-                    return output_content
+                    return True
                 
         except IOError as e:
             self.log.error(f"Error fetching files: {str(e)}")
