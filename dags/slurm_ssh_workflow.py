@@ -125,4 +125,6 @@ with DAG('slurm_ssh_workflow',
 
     #end = DummyOperator(task_id='end')
 
-    start >> create_script >> submit_slurm_job >> monitor_slurm_job >> end
+    #start >> create_script >> submit_slurm_job >> monitor_slurm_job >> end
+
+    create_script >> submit_slurm_job >> monitor_slurm_job
