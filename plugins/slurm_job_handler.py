@@ -3,7 +3,7 @@ from airflow.sensors.base_sensor_operator import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
 import time
 
-local_path = '/home/airflow/slurm_scripts/'
+#local_path = '/home/airflow/slurm_scripts/'
 
 class SlurmJobHandlingSensor(BaseSensorOperator):
     template_fields = ('script_name', 'remote_path')
@@ -35,8 +35,8 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)
         with ssh_hook.get_conn() as ssh_client:
             remote_script_path = f'{self.remote_path}/{self.script_name}'
-            remote_output_path = f'{self.remote_path}/{self.script_name}.txt'
-            remote_error_path = f'{self.remote_path}/{self.script_name}.txt'
+            remote_output_path = f'{self.remote_path}/{self.script_name}.out'
+            remote_error_path = f'{self.remote_path}/{self.script_name}.err'
             local_script_path = f'{self.local_path}/{self.script_name}'
 
             sftp_client = ssh_client.open_sftp()
@@ -73,10 +73,11 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             sftp_client = ssh_client.open_sftp()
             remote_output_path = f'{self.remote_path}/{self.script_name}.out'
             remote_error_path = f'{self.remote_path}/{self.script_name}.err'
-            local_output_path = f'/tmp/{self.script_name}_{job_id}.out'
-            local_error_path = f'/tmp/{self.script_name}_{job_id}.err'
+            local_output_path = f'{self.local_path}/{self.script_name}_{job_id}.out'
+            local_error_path = f'{self.local_path}/{self.script_name}_{job_id}.err'
             sftp_client.get(remote_output_path, local_output_path)
             sftp_client.get(remote_error_path, local_error_path)
+            sftp_client.close()
 
             # Read the contents of the downloaded files
             with open(local_output_path, 'r') as file_out:
@@ -84,7 +85,6 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             with open(local_error_path, 'r') as file_err:
                 error_content = file_err.read()
 
-            sftp_client.close()
             self.log.info(f"Output and error files retrieved: {local_output_path}, {local_error_path}")
 
             return output_content, error_content

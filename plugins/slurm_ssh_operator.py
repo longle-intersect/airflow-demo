@@ -91,13 +91,13 @@ class SlurmJobSensor(BaseSensorOperator):
                     # Read the contents of the downloaded files
                     with open(local_output_path, 'r') as file_out:
                         output_content = file_out.read()
+                        self.log.info(f"Output of {job_id}: {output_content}")
                     with open(local_error_path, 'r') as file_err:
                         error_content = file_err.read()
 
                     self.log.info(f"Output and error files retrieved: {output_file}, {error_file}")
                     self.log.info(f"Job {job_id} has completed or does not exist")
-                    self.log.info(f"Output of {job_id}: {output_content}")
-                    
+                  
                     return True
                 
         except IOError as e:
