@@ -26,10 +26,10 @@ def create_slurm_script(**kwargs):
 #SBATCH -t 00:10:00
 
 # Specify the work to be done
-sleep {sec}
+sleep {kwargs['sec']}
 echo "Welcome to SDC! I'm Long Le"
 """
-    script_path = f'/home/airflow/slurm_scripts/{script_name}'
+    script_path = f'/home/airflow/slurm_scripts/{kwargs['script_name']}'
     with open(script_path, 'w') as file:
         file.write(script_content)
     return script_path

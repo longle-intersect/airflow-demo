@@ -66,7 +66,7 @@ def create_processing_script(**kwargs):
 # pip install numpy==1.20.0 requests geopandas==0.10.2 rasterstats==0.15.0
 
 # Run the Python script
-python /home/lelong/workspace/s2a_pipeline/sentinel2-pipeline/temporal_stats/temporal_stats.py --input_path {input_path} --output_path /home/lelong/temp_data/sentinel2_step2
+python /home/lelong/workspace/s2a_pipeline/sentinel2-pipeline/temporal_stats/temporal_stats.py --input_path {kwargs['input_path']} --output_path /home/lelong/temp_data/sentinel2_step2
 """
     script_path = '/home/airflow/slurm_scripts/test_process_s2image.slurm'
     with open(script_path, 'w') as file:
@@ -81,14 +81,14 @@ with DAG('test_download_s2image',
          catchup=False) as dag:
 
     create_script = PythonOperator(
-        task_id='create_slurm_script',
+        task_id='prepare_download_script',
         python_callable=create_slurm_script,
         provide_context=True,
         dag=dag,
     )
 
     handle_slurm_job = SlurmJobHandlingSensor(
-        task_id='handle_slurm_job',
+        task_id='download_s2_imagery',
         ssh_conn_id='slurm_ssh_connection',
         script_name='test_download_s2image.slurm',
         remote_path='/home/lelong/job_script',
