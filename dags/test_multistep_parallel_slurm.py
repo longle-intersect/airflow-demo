@@ -1,3 +1,6 @@
+# example_dag.py
+import sys
+sys.path.insert(0, '/opt/airflow/dags/repo/plugins')
 from airflow import DAG
 from datetime import datetime, timedelta
 from airflow.operators.python import PythonOperator
