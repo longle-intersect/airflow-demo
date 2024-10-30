@@ -3,6 +3,7 @@ sys.path.insert(0, '/opt/airflow/dags/repo/plugins')
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.providers.ssh.operators.ssh import SSHOperator
+from datetime import datetime, timedelta
 from airflow.utils.dates import days_ago
 from airflow.operators.python import PythonOperator
 from slurm_job_handler import SlurmJobHandlingSensor
