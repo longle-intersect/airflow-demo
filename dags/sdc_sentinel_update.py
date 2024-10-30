@@ -6,7 +6,7 @@ from airflow.providers.ssh.operators.ssh import SSHOperator
 from datetime import datetime, timedelta
 from airflow.utils.dates import days_ago
 from airflow.operators.python import PythonOperator
-from slurm_job_handler import SlurmJobHandlingSensor
+from slurm_job_handler_new import SlurmJobHandlingSensor
 
 # DAG Configuration
 default_args = {
@@ -73,9 +73,9 @@ with DAG(
     """
 
     # Define all tasks
-    script_stage_1_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s1.slurm',
-                                              'stage': '1',
-                                              'stage_script': f'{script_stage_1}'})
+    # script_stage_1_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s1.slurm',
+    #                                           'stage': '1',
+    #                                           'stage_script': f'{script_stage_1}'})
 
     # Task 1: Cloud fmask processing
     cloud_fmask_processing = SlurmJobHandlingSensor(
@@ -84,6 +84,7 @@ with DAG(
         script_name=f'{dag.dag_id}_s1.slurm',
         remote_path='/home/lelong/log_airflow_slurm/scripts',
         local_path='/home/airflow/slurm_scripts', 
+        stage_script=script_stage_1,
         dag=dag,
         timeout=3600,
         poke_interval=30,
@@ -98,9 +99,9 @@ with DAG(
     """
 
     # Define all tasks
-    script_stage_2_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s2.slurm',
-                                              'stage': '2',
-                                              'stage_script': f'{script_stage_2}'})
+    # script_stage_2_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s2.slurm',
+    #                                           'stage': '2',
+    #                                           'stage_script': f'{script_stage_2}'})
 
     # Task 2: Topo masks processing
     topo_masks_processing = SlurmJobHandlingSensor(
@@ -109,6 +110,7 @@ with DAG(
         script_name=f'{dag.dag_id}_s2.slurm',
         remote_path='/home/lelong/log_airflow_slurm/scripts',
         local_path='/home/airflow/slurm_scripts', 
+        stage_script=script_stage_2,
         dag=dag,
         timeout=3600,
         poke_interval=30,
@@ -122,9 +124,9 @@ with DAG(
     fi    
     """
     # Define all tasks
-    script_stage_3_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s3.slurm',
-                                              'stage': '3',
-                                              'stage_script': f'{script_stage_3}'})
+    # script_stage_3_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s3.slurm',
+    #                                           'stage': '3',
+    #                                           'stage_script': f'{script_stage_3}'})
     # Task 3: Surface reflectance processing
     surface_reflectance_processing = SlurmJobHandlingSensor(
         task_id='surface_reflectance_processing',
@@ -132,6 +134,7 @@ with DAG(
         script_name=f'{dag.dag_id}_s3.slurm',
         remote_path='/home/lelong/log_airflow_slurm/scripts',
         local_path='/home/airflow/slurm_scripts', 
+        stage_script=script_stage_3,        
         dag=dag,
         timeout=3600,
         poke_interval=30,
@@ -145,16 +148,17 @@ with DAG(
     fi    
     """
     # Define all tasks
-    script_stage_4_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s4.slurm',
-                                              'stage': '4',
-                                              'stage_script': f'{script_stage_4}'})
+    # script_stage_4_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s4.slurm',
+    #                                           'stage': '4',
+    #                                           'stage_script': f'{script_stage_4}'})
     # Task 4: Water index processing
     water_index_processing = SlurmJobHandlingSensor(
         task_id='water_index_processing',
         ssh_conn_id='slurm_ssh_connection',
         script_name=f'{dag.dag_id}_s4.slurm',
         remote_path='/home/lelong/log_airflow_slurm/scripts',
-        local_path='/home/airflow/slurm_scripts', 
+        local_path='/home/airflow/slurm_scripts',
+        stage_script=script_stage_4,         
         dag=dag,
         timeout=3600,
         poke_interval=30,
@@ -168,9 +172,9 @@ with DAG(
     fi    
     """
     # Define all tasks
-    script_stage_5_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s5.slurm',
-                                              'stage': '5',
-                                              'stage_script': f'{script_stage_5}'})
+    # script_stage_5_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s5.slurm',
+    #                                           'stage': '5',
+    #                                           'stage_script': f'{script_stage_5}'})
     # Task 8: Fractional cover processing
     fractional_cover_processing = SlurmJobHandlingSensor(
         task_id='fractional_cover_processing',
@@ -178,6 +182,7 @@ with DAG(
         script_name=f'{dag.dag_id}_s5.slurm',
         remote_path='/home/lelong/log_airflow_slurm/scripts',
         local_path='/home/airflow/slurm_scripts', 
+        stage_script=script_stage_5,        
         dag=dag,
         timeout=3600,
         poke_interval=30,
