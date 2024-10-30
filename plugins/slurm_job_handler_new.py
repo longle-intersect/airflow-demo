@@ -28,12 +28,13 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
 #SBATCH --output={self.remote_path}/stdout/{self.script_name}.log
 #SBATCH --error={self.remote_path}/stderr/{self.script_name}.error
 #SBATCH -n 1
-####SBATCH --mem=8192
-#SBATCH -t 5:00:00
+#SBATCH --mem=2048M
+#SBATCH -t 00:30:00
 # Load modules and specify the work
 module load sdc_testing
 module load cloud fractionalcover
 
+sleep 30
 echo $FILESTORE_PATH
 """
         #{self.stage_script}
