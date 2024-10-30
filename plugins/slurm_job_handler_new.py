@@ -28,7 +28,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
 #SBATCH --output=/home/lelong/log_airflow_slurm/stdout/{self.script_name}.log
 #SBATCH --error=/home/lelong/log_airflow_slurm/stderr/{self.script_name}.error
 #SBATCH -n 1
-#SBATCH --mem=2048M
+#SBATCH --mem=8192M
 #SBATCH -t 00:30:00
 # Load modules and specify the work
 module load sdc_testing
