@@ -65,7 +65,9 @@ with DAG(
     # Combine all commands into one large script
     script_stage_1 = """
 # Execute cloud fmask processing
-qv_sentinel2cloud_fmask.py --toaref10 $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_ab0m5.img --updatedatabase
+cd $FILESTORE_PATH/tmp_data/
+
+qv_sentinel2cloud_fmask.py --toaref10 cemsre_t55hdv_20241008_ab0m5.img
 if [ $? -ne 0 ]; then
     echo "Failed at stage 1: Cloud fmask processing."
     exit 1
