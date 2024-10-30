@@ -25,8 +25,8 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
     def _create_slurm_script(self):
         script_content = f"""#!/bin/bash
 #SBATCH --job-name={self.script_name}
-#SBATCH --output={self.remote_path}/stdout/{self.script_name}.log
-#SBATCH --error={self.remote_path}/stderr/{self.script_name}.error
+#SBATCH --output=/home/lelong/log_airflow_slurm/stdout/{self.script_name}.log
+#SBATCH --error=/home/lelong/log_airflow_slurm/stderr/{self.script_name}.error
 #SBATCH -n 1
 #SBATCH --mem=2048M
 #SBATCH -t 00:30:00
@@ -34,8 +34,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
 module load sdc_testing
 module load cloud fractionalcover
 
-sleep 30
-echo $FILESTORE_PATH
+{self.stage_script}
 """
         #{self.stage_script}
         script_path = os.path.join(self.local_path, self.script_name)
