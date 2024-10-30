@@ -64,13 +64,13 @@ with DAG(
 
     # Combine all commands into one large script
     script_stage_1 = """
-    # Execute cloud fmask processing
-    qv_sentinel2cloud_fmask.py --toaref10 $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_ab0m5.img --updatedatabase
-    if [ $? -ne 0 ]; then
-        echo "Failed at stage 1: Cloud fmask processing."
-        exit 1
-    fi
-    """
+# Execute cloud fmask processing
+qv_sentinel2cloud_fmask.py --toaref10 $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_ab0m5.img --updatedatabase
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 1: Cloud fmask processing."
+    exit 1
+fi
+"""
 
     # Define all tasks
     # script_stage_1_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s1.slurm',
@@ -91,12 +91,12 @@ with DAG(
     )
 
     script_stage_2="""
-    qv_sentinel2topomasks.py --toaref10 $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_ab0m5.img
-    if [ $? -ne 0 ]; then
-        echo "Failed at stage 2: Topo masks processing."
-        exit 1
-    fi
-    """
+qv_sentinel2topomasks.py --toaref10 $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_ab0m5.img
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 2: Topo masks processing."
+    exit 1
+fi
+"""
 
     # Define all tasks
     # script_stage_2_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s2.slurm',
@@ -117,12 +117,12 @@ with DAG(
     )
 
     script_stage_3="""
-    doSfcRefSentinel2.py --toaref $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_ab0m5.img
-    if [ $? -ne 0 ]; then
-        echo "Failed at stage 3: Surface reflectance processing."
-        exit 1
-    fi    
-    """
+doSfcRefSentinel2.py --toaref $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_ab0m5.img
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 3: Surface reflectance processing."
+    exit 1
+fi    
+"""
     # Define all tasks
     # script_stage_3_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s3.slurm',
     #                                           'stage': '3',
@@ -141,12 +141,12 @@ with DAG(
     )
 
     script_stage_4="""
-    qv_water_index2015.py $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_abam5.img $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_abbm5.img --omitothermasks
-    if [ $? -ne 0 ]; then
-        echo "Failed at stage 4: Water index processing."
-        exit 1
-    fi    
-    """
+qv_water_index2015.py $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_abam5.img $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_abbm5.img --omitothermasks
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 4: Water index processing."
+    exit 1
+fi    
+"""
     # Define all tasks
     # script_stage_4_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s4.slurm',
     #                                           'stage': '4',
@@ -165,12 +165,12 @@ with DAG(
     )
 
     script_stage_5="""
-    qv_fractionalcover_sentinel2.py $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_abam5.img
-    if [ $? -ne 0 ]; then
-        echo "Failed at stage 5: Fractional cover processing."
-        exit 1
-    fi    
-    """
+qv_fractionalcover_sentinel2.py $FILESTORE_PATH/tmp_data/cemsre_t55hdv_20241008_abam5.img
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 5: Fractional cover processing."
+    exit 1
+fi    
+"""
     # Define all tasks
     # script_stage_5_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s5.slurm',
     #                                           'stage': '5',

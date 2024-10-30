@@ -28,6 +28,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
 #SBATCH --output={self.remote_path}/stdout/{self.script_name}.log
 #SBATCH --error={self.remote_path}/stderr/{self.script_name}.error
 #SBATCH -n 1
+####SBATCH --mem=8192
 #SBATCH -t 5:00:00
 # Load modules and specify the work
 module load sdc_testing
