@@ -73,7 +73,7 @@ with DAG(
     """
 
     # Define all tasks
-    script_stage_1_path = create_slurm_script({'script_name': f'{dag.dag_id}_s1.slurm',
+    script_stage_1_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s1.slurm',
                                               'stage': '1',
                                               'stage_script': f'{script_stage_1}'})
 
@@ -98,7 +98,7 @@ with DAG(
     """
 
     # Define all tasks
-    script_stage_2_path = create_slurm_script({'script_name': f'{dag.dag_id}_s2.slurm',
+    script_stage_2_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s2.slurm',
                                               'stage': '2',
                                               'stage_script': f'{script_stage_2}'})
 
@@ -121,6 +121,10 @@ with DAG(
         exit 1
     fi    
     """
+    # Define all tasks
+    script_stage_3_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s3.slurm',
+                                              'stage': '3',
+                                              'stage_script': f'{script_stage_3}'})
     # Task 3: Surface reflectance processing
     surface_reflectance_processing = SlurmJobHandlingSensor(
         task_id='surface_reflectance_processing',
@@ -140,6 +144,10 @@ with DAG(
         exit 1
     fi    
     """
+    # Define all tasks
+    script_stage_4_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s4.slurm',
+                                              'stage': '4',
+                                              'stage_script': f'{script_stage_4}'})
     # Task 4: Water index processing
     water_index_processing = SlurmJobHandlingSensor(
         task_id='water_index_processing',
@@ -159,6 +167,10 @@ with DAG(
         exit 1
     fi    
     """
+    # Define all tasks
+    script_stage_5_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s5.slurm',
+                                              'stage': '5',
+                                              'stage_script': f'{script_stage_5}'})
     # Task 8: Fractional cover processing
     fractional_cover_processing = SlurmJobHandlingSensor(
         task_id='fractional_cover_processing',
