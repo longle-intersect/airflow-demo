@@ -32,9 +32,11 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
 #SBATCH -t 5:00:00
 # Load modules and specify the work
 module load sdc_testing
-module load cloud_fractionalcover
-{self.stage_script}
+module load cloud fractionalcover
+
+echo $FILESTORE_PATH
 """
+        #{self.stage_script}
         script_path = os.path.join(self.local_path, self.script_name)
         with open(script_path, 'w') as file:
             file.write(script_content)
