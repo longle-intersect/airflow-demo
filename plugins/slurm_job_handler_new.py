@@ -29,7 +29,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
 #SBATCH --error=/home/lelong/log_airflow_slurm/stderr/{self.script_name}.error
 #SBATCH -n 1
 #SBATCH --mem=8192M
-#SBATCH -t 00:30:00
+#SBATCH -t 00:45:00
 # Load modules and specify the work
 module load sdc_testing
 module load cloud fractionalcover
