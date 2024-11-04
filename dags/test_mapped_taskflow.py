@@ -22,8 +22,10 @@ from airflow.models.dag import DAG
 
 with DAG(
     dag_id="test_mapped_taskflow",
-    start_date=datetime.datetime(2022, 1, 1),
-    schedule="@daily",
+    start_date=datetime.datetime(2024, 11, 1),
+    schedule=None
+    # start_date=datetime.datetime(2022, 1, 1),
+    # schedule="@daily",
 ) as dag:
 
     @dag.task
