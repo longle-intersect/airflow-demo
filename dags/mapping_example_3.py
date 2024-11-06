@@ -10,7 +10,6 @@ def sophisticated_batch_processing_dag():
         num_datasets = random.randint(1, 9)  # Random number less than 10
         return [f"dataset{i}" for i in range(1, num_datasets + 1)]
 
-
     @task
     def preprocess_dataset(dataset_id):
         # Simulate preprocessing steps
