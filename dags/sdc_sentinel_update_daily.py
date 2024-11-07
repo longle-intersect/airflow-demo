@@ -60,6 +60,8 @@ echo "Failed at stage 1: Cloud fmask processing."
 exit 1
 fi
 """    
+        logging.INFO(f'{script_stage_1}')
+        
         cloud_fmask_processing = SlurmJobHandlingSensor(
             task_id=f'{script_name}_s1',
             ssh_conn_id='slurm_ssh_connection',

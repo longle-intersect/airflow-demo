@@ -26,10 +26,12 @@ def one_two_three_traditional():
     return [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14], [15]]
 
 def plus_10_traditional(x):
-    return x + 10
+    # Since x is a list containing a single integer, we access it and then return a new list
+    return [x[0] + 10]
 
 def minus_3_traditional(x):
-    return x - 3
+    # Adjust the function to handle a list containing a single integer
+    return [x[0] - 3]
 
 @dag(
     dag_id="test_dag_loop_dmt",
