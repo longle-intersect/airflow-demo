@@ -2,6 +2,7 @@ import sys
 import logging
 sys.path.insert(0, '/opt/airflow/dags/repo/plugins')
 from airflow import DAG
+from airflow.decorators import dag, task
 from airflow.operators.bash import BashOperator
 from airflow.providers.ssh.operators.ssh import SSHOperator
 from datetime import datetime, timedelta
@@ -58,7 +59,7 @@ cd $FILESTORE_PATH/tmp_data/
 
     return script_name, script_path
 
-    
+
 @dag(dag_id='sdc_sentinel_update',
      default_args=default_args,
      description='Daily Update Sentinel-2 Imagery on SDC',
