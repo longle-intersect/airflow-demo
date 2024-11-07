@@ -13,7 +13,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
     template_fields = ('script_name', 'remote_path')
 
     @apply_defaults
-    def __init__(self, ssh_conn_id, script_name, remote_path, local_path, *args, **kwargs):
+    def __init__(self, ssh_conn_id, script_name, remote_path, local_path, date, stage, *args, **kwargs):
         super(SlurmJobHandlingSensor, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
         self.script_name = script_name
