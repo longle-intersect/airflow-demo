@@ -30,7 +30,7 @@ def plus_10_traditional(x):
 
 def minus_3_traditional(x):
     return x - 3
-    
+
 @dag(
     dag_id="test_dag_loop_dmt",
     start_date=datetime(2024, 4, 1),
@@ -79,6 +79,7 @@ def dynamic_tsk_map_dag():
         start_timer_task >>\
         one_two_three_task >>\
         plus_10_task >>\
+        minus_3_task >>\
         end_timer_task >>\
         end_task
 
