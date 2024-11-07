@@ -31,7 +31,7 @@ cd $FILESTORE_PATH/tmp_data/
 """
 
     #{self.stage_script}
-    script_path = os.path.join(local_path, script_name)
+    script_path = local_path + script_name + ".slurm"
     with open(script_path, 'w') as file:
         file.write(script_content)
 
