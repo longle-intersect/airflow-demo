@@ -18,7 +18,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
         super(SlurmJobHandlingSensor, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
         self.script_id = script_name
-        self.script_name = self.script_name + ".slurm"
+        self.script_name = self.script_id + ".slurm"
         self.remote_path = remote_path
         self.local_path = local_path
         #self.stage_script = stage_script
