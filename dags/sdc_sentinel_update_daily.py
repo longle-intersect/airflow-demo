@@ -20,7 +20,7 @@ default_args = {
     'email_on_retry': False,
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
-    'start_date': datetime(2023, 1, 1),
+    'start_date': datetime(2024, 11, 1),
 }
 
 # Python function to create SLURM script
@@ -153,4 +153,4 @@ fi
     for date in dates:
         generate_and_process(date)
 
-dag_instance = dynamic_sentinel_processing_dag()
+dag_instance = daily_sentinel_batch_processing_dag()
