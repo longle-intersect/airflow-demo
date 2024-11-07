@@ -60,7 +60,7 @@ cd $FILESTORE_PATH/tmp_data/
     return script_name, script_path
 
 
-@dag(dag_id='sdc_sentinel_update',
+@dag(dag_id='sdc_sentinel_batch_update_daily',
      default_args=default_args,
      description='Daily Update Sentinel-2 Imagery on SDC',
      schedule_interval=None,
