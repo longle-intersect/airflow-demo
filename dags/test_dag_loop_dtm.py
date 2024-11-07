@@ -21,11 +21,11 @@ def calculate_time_elapsed(**kwargs):
 
 # Function to return a list of numbers for dynamic task mapping
 def one_two_three_traditional():
-    return [[i] for i in range(1, 16)]
+    return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
 # Function to add 10 to a given number
 def plus_10_traditional(x):
-    return x[0] + 10  # Adjusted to access first element of list
+    return x + 10
 
 # Function to subtract 3 from a given number
 def minus_3_traditional(x):
