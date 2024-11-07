@@ -52,7 +52,7 @@ def daily_sentinel_batch_processing_dag():
         #for date in dates:
 
         script_name = f'sentt_{date}'
-        script_stage_1 = """
+        script_stage_1 = f"""
 # Execute cloud fmask processing
 qv_sentinel2cloud_fmask.py --toaref10 cemsre_t55hdv_{date}_ab0m5.img
 if [ $? -ne 0 ]; then
