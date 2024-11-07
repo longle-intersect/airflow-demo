@@ -82,7 +82,7 @@ fi
 
         #for date in dates:
         script_name = f'sentt_{date}'
-        script_stage_2="""
+        script_stage_2=f"""
 qv_sentinel2topomasks.py --toaref10 cemsre_t55hdv_{date}_ab0m5.img
 if [ $? -ne 0 ]; then
     echo "Failed at stage 2: Topo masks processing."
@@ -109,7 +109,7 @@ fi
     def batch_surface_reflectance_processing(date):
 
         script_name = f'sentt_{date}'
-        script_stage_3="""
+        script_stage_3=f"""
 doSfcRefSentinel2.py --toaref cemsre_t55hdv_{date}_ab0m5.img
 if [ $? -ne 0 ]; then
     echo "Failed at stage 3: Surface reflectance processing."
@@ -136,7 +136,7 @@ fi
     def batch_water_index_processing(date):
 
         script_name = f'sentt_{date}'
-        script_stage_4="""
+        script_stage_4=f"""
 qv_water_index2015.py cemsre_t55hdv_{date}_abam5.img cemsre_t55hdv_{date}_abbm5.img --omitothermasks
 if [ $? -ne 0 ]; then
     echo "Failed at stage 4: Water index processing."
@@ -162,7 +162,7 @@ fi
     def batch_fractional_cover_processing(date):
 
         script_name = f'sentt_{date}'
-        script_stage_5="""
+        script_stage_5=f"""
 qv_fractionalcover_sentinel2.py cemsre_t55hdv_{date}_abam5.img
 if [ $? -ne 0 ]; then
     echo "Failed at stage 5: Fractional cover processing."
