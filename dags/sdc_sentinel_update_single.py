@@ -53,7 +53,8 @@ with DAG(
         dag=dag,
         timeout=3600,
         poke_interval=30,
-        kwargs = {'date' : date, 'stage': "1"}
+        date = date,
+        stage = "1"
     )
 
     # Define all tasks
@@ -72,7 +73,8 @@ with DAG(
         dag=dag,
         timeout=3600,
         poke_interval=30,
-        kwargs = {'date' : date, 'stage': "2"}
+        date = date,
+        stage = "2"
     )
 
     # Define all tasks
@@ -90,7 +92,8 @@ with DAG(
         dag=dag,
         timeout=3600,
         poke_interval=30,
-        kwargs = {'date' : date, 'stage': "3"}        
+        date = date,
+        stage = "3"     
     )
 
     # Define all tasks
@@ -108,7 +111,8 @@ with DAG(
         dag=dag,
         timeout=3600,
         poke_interval=30,
-        kwargs = {'date' : date, 'stage': "4"}         
+        date = date,
+        stage = "4"       
     )
 
     # Define all tasks
@@ -126,7 +130,8 @@ with DAG(
         dag=dag,
         timeout=3600,
         poke_interval=30,
-        kwargs = {'date' : date, 'stage': "5"}              
+        date = date,
+        stage = "5"           
     )
 
     # Task Dependency Setup

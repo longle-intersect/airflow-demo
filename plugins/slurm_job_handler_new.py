@@ -21,8 +21,8 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
         self.local_path = local_path
         #self.stage_script = stage_script
         self.job_id = None
-        self.date = kwargs['date']
-        self.processing_stage = kwargs['stage']
+        self.date = date
+        self.processing_stage = stage
 
     #def execute(self, context):
     #    job_id = self._submit_job()
@@ -33,7 +33,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
         if not self.job_id:
             #self.script_path = self._create_slurm_script()
             self.script_stage = generate_script_stage(self.date,
-                                                      self.stage)
+                                                      self.processing_stage)
 
             self.script_path = create_slurm_script(self.script_name,
                                                    self.script_stage,
