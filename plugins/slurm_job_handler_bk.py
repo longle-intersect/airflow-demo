@@ -1,25 +1,21 @@
-import time
-import os
-import sys
-import logging
-sys.path.insert(0, '/opt/airflow/dags/repo/utils')
 from airflow.providers.ssh.hooks.ssh import SSHHook
 from airflow.sensors.base_sensor_operator import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
-from sentinel_utils import *
+import time
+import os
 #local_path = '/home/airflow/slurm_scripts/'
 
 class SlurmJobHandlingSensor(BaseSensorOperator):
     template_fields = ('script_name', 'remote_path')
 
     @apply_defaults
-    def __init__(self, ssh_conn_id, script_name, remote_path, local_path, *args, **kwargs):
+    def __init__(self, ssh_conn_id, script_name, remote_path, local_path, stage_script, *args, **kwargs):
         super(SlurmJobHandlingSensor, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
         self.script_name = script_name
         self.remote_path = remote_path
         self.local_path = local_path
-        #self.stage_script = stage_script
+        self.stage_script = stage_script
         self.job_id = None
         self.date = kwargs['date']
         self.processing_stage = kwargs['stage']
@@ -27,17 +23,44 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
     #def execute(self, context):
     #    job_id = self._submit_job()
     #    return job_id
+
+    def _create_slurm_script(self):
+        script_content = f"""#!/bin/bash
+#SBATCH --job-name={self.script_name}
+#SBATCH --output=/home/lelong/log_airflow_slurm/stdout/{self.script_name}.log
+#SBATCH --error=/home/lelong/log_airflow_slurm/stderr/{self.script_name}.error
+#SBATCH -n 1
+#SBATCH --mem=8192M
+#SBATCH -t 01:00:00
+
+# Load modules and specify the work
+module load sdc_testing
+if [ $? -ne 0 ]; then
+    echo "Failed to load sdc_testing module."
+    exit 1
+fi
+
+# Load necessary modules
+module load cloud fractionalcover
+if [ $? -ne 0 ]; then
+    echo "Failed to load cloud fractionalcover module."
+    exit 1
+fi
+
+# Specify the work to be done
+cd $FILESTORE_PATH/tmp_data/
+{self.stage_script}
+"""
+        #{self.stage_script}
+        script_path = os.path.join(self.local_path, self.script_name)
+        with open(script_path, 'w') as file:
+            file.write(script_content)
+        return script_path
     
     def poke(self, context):
 
         if not self.job_id:
-            #self.script_path = self._create_slurm_script()
-            self.script_stage = generate_script_stage(self.date,
-                                                      self.stage)
-
-            self.script_path = create_slurm_script(self.script_name,
-                                                   self.script_stage,
-                                                   self.local_path)
+            self.script_path = self._create_slurm_script()
             self.job_id = self._submit_job()
             return False
         

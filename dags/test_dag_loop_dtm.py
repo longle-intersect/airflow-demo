@@ -61,6 +61,8 @@ def dynamic_tsk_map_dag():
         task_id="plus_10_task", python_callable=plus_10_traditional
     ).expand(op_args=one_two_three_task.output)
 
+    logging.INFO(plus_10_task.output)
+    
     minus_3_task = PythonOperator.partial(
         task_id="minus_3_task", 
         python_callable=minus_3_traditional
