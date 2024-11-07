@@ -1,5 +1,8 @@
 import sys
 import os
+import logging
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 def create_slurm_script(script_name, script_stage, local_path):
 
@@ -31,6 +34,8 @@ cd $FILESTORE_PATH/tmp_data/
 """
 
     #{self.stage_script}
+    logging.INFO(local_path)
+    logging.INFO(script_name)
     script_path = local_path + script_name + ".slurm"
     with open(script_path, 'w') as file:
         file.write(script_content)
