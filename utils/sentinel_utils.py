@@ -34,11 +34,11 @@ cd $FILESTORE_PATH/tmp_data/
     script_path = os.path.join(local_path, script_name)
     with open(script_path, 'w') as file:
         file.write(script_content)
-        
+
     return script_path
 
 
-def generate_script_stage(date, stage);
+def generate_script_stage(date, stage):
 
     if stage == "1":
         script_stage = f"""
