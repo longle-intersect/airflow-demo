@@ -11,8 +11,8 @@ from airflow.operators.python import PythonOperator
 from slurm_job_handler_new import SlurmJobHandlingSensor
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-remote_path='/home/lelong/log_airflow_slurm/scripts',
-local_path='/home/airflow/slurm_scripts', 
+remote_path='/home/lelong/log_airflow_slurm/scripts/',
+local_path='/home/airflow/slurm_scripts/', 
 
 # DAG Configuration
 default_args = {
@@ -46,7 +46,7 @@ with DAG(
     cloud_fmask_processing = SlurmJobHandlingSensor(
         task_id=f'{script_name}_s1',
         ssh_conn_id='slurm_ssh_connection',
-        script_name=f'{script_name}_s1.slurm',
+        script_name=f'{script_name}_s1',
         remote_path=remote_path,
         local_path=local_path, 
         #stage_script=script_stage_1,
@@ -66,7 +66,7 @@ with DAG(
     topo_masks_processing = SlurmJobHandlingSensor(
         task_id=f'{script_name}_s2',
         ssh_conn_id='slurm_ssh_connection',
-        script_name=f'{script_name}_s2.slurm',
+        script_name=f'{script_name}_s2',
         remote_path=remote_path,
         local_path=local_path, 
         #stage_script=script_stage_2,
@@ -85,7 +85,7 @@ with DAG(
     surface_reflectance_processing = SlurmJobHandlingSensor(
         task_id=f'{script_name}_s3',
         ssh_conn_id='slurm_ssh_connection',
-        script_name=f'{script_name}_s3.slurm',
+        script_name=f'{script_name}_s3',
         remote_path=remote_path,
         local_path=local_path, 
         #stage_script=script_stage_3,        
@@ -104,7 +104,7 @@ with DAG(
     water_index_processing = SlurmJobHandlingSensor(
         task_id=f'{script_name}_s4',
         ssh_conn_id='slurm_ssh_connection',
-        script_name=f'{script_name}_s4.slurm',
+        script_name=f'{script_name}_s4',
         remote_path=remote_path,
         local_path=local_path,
         #stage_script=script_stage_4,         
@@ -123,7 +123,7 @@ with DAG(
     fractional_cover_processing = SlurmJobHandlingSensor(
         task_id=f'{script_name}_s5',
         ssh_conn_id='slurm_ssh_connection',
-        script_name=f'{script_name}_s5.slurm',
+        script_name=f'{script_name}_s5',
         remote_path=remote_path,
         local_path=local_path,
         #stage_script=script_stage_5,        
