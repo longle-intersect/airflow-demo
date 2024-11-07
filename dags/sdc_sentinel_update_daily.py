@@ -25,7 +25,7 @@ default_args = {
 
 # Python function to create SLURM script
 def create_slurm_script(date, stage, stage_script, **kwargs):
-    script_name = f'{date}_s{stage}.slurm'
+    script_name = f'sentt_{date}_s{stage}.slurm'
     script_content = f"""#!/bin/bash
 #SBATCH --job-name=sentt_test_{date}_s{stage}
 #SBATCH --output=/home/lelong/log_airflow_slurm/stdout/sentinel2_{date}_s{stage}.log
