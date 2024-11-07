@@ -23,42 +23,6 @@ default_args = {
     'start_date': datetime(2024, 11, 1),
 }
 
-# Python function to create SLURM script
-def create_slurm_script(date, stage, stage_script, **kwargs):
-    script_name = f'sentt_{date}_s{stage}.slurm'
-    script_content = f"""#!/bin/bash
-#SBATCH --job-name=sentt_test_{date}_s{stage}
-#SBATCH --output=/home/lelong/log_airflow_slurm/stdout/sentinel2_{date}_s{stage}.log
-#SBATCH --error=/home/lelong/log_airflow_slurm/stdout/sentinel2_{date}_s{stage}.error
-#SBATCH -n 1
-####SBATCH --mem=8192
-#SBATCH -t 5:00:00
-
-# Load sdc_testing module
-module load sdc_testing
-if [ $? -ne 0 ]; then
-    echo "Failed to load sdc_testing module."
-    exit 1
-fi
-
-# Load necessary modules
-module load cloud fractionalcover
-if [ $? -ne 0 ]; then
-    echo "Failed to load cloud_fractionalcover module."
-    exit 1
-fi
-    
-# Specify the work to be done
-cd $FILESTORE_PATH/tmp_data/
-
-{stage_script}
-"""
-    script_path = f'/home/airflow/slurm_scripts/{script_name}'
-    with open(script_path, 'w') as file:
-        file.write(script_content)
-
-    return script_name, script_path
-
 
 @dag(dag_id='sdc_sentinel_batch_update_daily',
      default_args=default_args,
@@ -69,6 +33,181 @@ cd $FILESTORE_PATH/tmp_data/
 def daily_sentinel_batch_processing_dag():
 
     dates = ["20241008"]  # Assuming these dates are dynamically determined elsewhere
+
+    # Combine all commands into one large script
+
+    # Define all tasks
+    # script_stage_1_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s1.slurm',
+    #                                           'stage': '1',
+    #                                           'stage_script': f'{script_stage_1}'})
+
+    # Task 1: Cloud fmask processing
+    @task
+    def batch_cloud_fmask_processing(dates):
+
+        s1_job_list = []
+
+        for date in dates:
+            script_name = f'sentt_{date}'
+            script_stage_1 = """
+# Execute cloud fmask processing
+qv_sentinel2cloud_fmask.py --toaref10 cemsre_t55hdv_{date}_ab0m5.img
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 1: Cloud fmask processing."
+    exit 1
+fi
+"""    
+            cloud_fmask_processing = SlurmJobHandlingSensor(
+                task_id=f'{script_name}_s1',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{script_name}_s1.slurm',
+                remote_path='/home/lelong/log_airflow_slurm/scripts',
+                local_path='/home/airflow/slurm_scripts', 
+                stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+            )
+
+            s1_job_list.append(cloud_fmask_processing)
+
+        return s1_job_list
+
+
+    @task
+    def batch_topo_masks_processing(dates):
+
+        s2_job_list = []
+
+        for date in dates:
+            script_name = f'sentt_{date}'
+            script_stage_2="""
+qv_sentinel2topomasks.py --toaref10 cemsre_t55hdv_20241008_ab0m5.img
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 2: Topo masks processing."
+    exit 1
+fi
+"""
+            # Task 2: Topo masks processing
+            topo_masks_processing = SlurmJobHandlingSensor(
+                task_id=f'{script_name}_s2',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{dag.dag_id}_s2.slurm',
+                remote_path='/home/lelong/log_airflow_slurm/scripts',
+                local_path='/home/airflow/slurm_scripts', 
+                stage_script=script_stage_2,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+            )
+
+            s2_job_list.append(topo_masks_processing)
+
+        return s2_job_list
+
+
+    @task
+    def batch_
+    script_stage_3="""
+cd $FILESTORE_PATH/tmp_data/
+
+doSfcRefSentinel2.py --toaref cemsre_t55hdv_20241008_ab0m5.img
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 3: Surface reflectance processing."
+    exit 1
+fi    
+"""
+    # Define all tasks
+    # script_stage_3_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s3.slurm',
+    #                                           'stage': '3',
+    #                                           'stage_script': f'{script_stage_3}'})
+    # Task 3: Surface reflectance processing
+    surface_reflectance_processing = SlurmJobHandlingSensor(
+        task_id='surface_reflectance_processing',
+        ssh_conn_id='slurm_ssh_connection',
+        script_name=f'{dag.dag_id}_s3.slurm',
+        remote_path='/home/lelong/log_airflow_slurm/scripts',
+        local_path='/home/airflow/slurm_scripts', 
+        stage_script=script_stage_3,        
+        dag=dag,
+        timeout=3600,
+        poke_interval=30,
+    )
+
+    script_stage_4="""
+cd $FILESTORE_PATH/tmp_data/
+
+qv_water_index2015.py cemsre_t55hdv_20241008_abam5.img cemsre_t55hdv_20241008_abbm5.img --omitothermasks
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 4: Water index processing."
+    exit 1
+fi    
+"""
+    # Define all tasks
+    # script_stage_4_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s4.slurm',
+    #                                           'stage': '4',
+    #                                           'stage_script': f'{script_stage_4}'})
+    # Task 4: Water index processing
+    water_index_processing = SlurmJobHandlingSensor(
+        task_id='water_index_processing',
+        ssh_conn_id='slurm_ssh_connection',
+        script_name=f'{dag.dag_id}_s4.slurm',
+        remote_path='/home/lelong/log_airflow_slurm/scripts',
+        local_path='/home/airflow/slurm_scripts',
+        stage_script=script_stage_4,         
+        dag=dag,
+        timeout=3600,
+        poke_interval=30,
+    )
+
+    script_stage_5="""
+cd $FILESTORE_PATH/tmp_data/
+
+qv_fractionalcover_sentinel2.py cemsre_t55hdv_20241008_abam5.img
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 5: Fractional cover processing."
+    exit 1
+fi    
+"""
+    # Define all tasks
+    # script_stage_5_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s5.slurm',
+    #                                           'stage': '5',
+    #                                           'stage_script': f'{script_stage_5}'})
+    # Task 8: Fractional cover processing
+    fractional_cover_processing = SlurmJobHandlingSensor(
+        task_id='fractional_cover_processing',
+        ssh_conn_id='slurm_ssh_connection',
+        script_name=f'{dag.dag_id}_s5.slurm',
+        remote_path='/home/lelong/log_airflow_slurm/scripts',
+        local_path='/home/airflow/slurm_scripts', 
+        stage_script=script_stage_5,        
+        dag=dag,
+        timeout=3600,
+        poke_interval=30,
+    )
+
+    # Task Dependency Setup
+    cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     @task
     def monitor_slurm_job(script_name, remote_path, local_path):

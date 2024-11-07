@@ -30,10 +30,23 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
 #SBATCH -n 1
 #SBATCH --mem=8192M
 #SBATCH -t 01:00:00
+
 # Load modules and specify the work
 module load sdc_testing
-module load cloud fractionalcover
+if [ $? -ne 0 ]; then
+    echo "Failed to load sdc_testing module."
+    exit 1
+fi
 
+# Load necessary modules
+module load cloud fractionalcover
+if [ $? -ne 0 ]; then
+    echo "Failed to load cloud fractionalcover module."
+    exit 1
+fi
+
+# Specify the work to be done
+cd $FILESTORE_PATH/tmp_data/
 {self.stage_script}
 """
         #{self.stage_script}

@@ -28,6 +28,9 @@ def one_two_three_traditional():
 def plus_10_traditional(x):
     return x + 10
 
+def minus_3_traditional(x):
+    return x - 3
+    
 @dag(
     dag_id="test_dag_loop_dmt",
     start_date=datetime(2024, 4, 1),
@@ -57,6 +60,11 @@ def dynamic_tsk_map_dag():
     plus_10_task = PythonOperator.partial(
         task_id="plus_10_task", python_callable=plus_10_traditional
     ).expand(op_args=one_two_three_task.output)
+
+    minus_3_task = PythonOperator.partial(
+        task_id="minus_3_task", 
+        python_callable=minus_3_traditional
+    ).expand(op_args=plus_10_task.output)
 
     end_timer_task = PythonOperator(
         task_id="end_timer_task",
