@@ -58,23 +58,13 @@ cd $FILESTORE_PATH/tmp_data/
 
     return script_name, script_path
 
-
-with DAG(
-    'sdc_sentinel_update_daily_batch',
-    default_args=default_args,
-    description='Daily Processing Batch Sentinel Images on SDC',
-    schedule_interval=None,  # Set to None for manual triggering
-    start_date=days_ago(1),
-    tags=['sdc', 'sentinel'],
-) as dag:
-
+    
 @dag(dag_id='sdc_sentinel_update',
      default_args=default_args,
      description='Daily Update Sentinel-2 Imagery on SDC',
      schedule_interval=None,
      start_date=days_ago(1),
      tags=['sdc', 'sentinel'])
-
 def daily_sentinel_batch_processing_dag():
 
     dates = ["20241008"]  # Assuming these dates are dynamically determined elsewhere
