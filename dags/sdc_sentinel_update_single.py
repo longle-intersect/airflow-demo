@@ -11,8 +11,8 @@ from airflow.operators.python import PythonOperator
 from slurm_job_handler_new import SlurmJobHandlingSensor
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-remote_path='/home/lelong/log_airflow_slurm/scripts/',
-local_path='/home/airflow/slurm_scripts/', 
+remote_path='/home/lelong/log_airflow_slurm/scripts/'
+local_path='/home/airflow/slurm_scripts/'
 
 # DAG Configuration
 default_args = {
