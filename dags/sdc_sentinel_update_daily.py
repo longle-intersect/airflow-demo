@@ -34,7 +34,12 @@ default_args = {
      tags=['sdc', 'sentinel'])
 def daily_sentinel_batch_processing_dag():
 
-    dates = ["20241011", "20241001"]  # Assuming these dates are dynamically determined elsewhere
+    def get_dates():
+        return ["20241011", "20241001"]  # Assuming these dates are dynamically determined elsewhere
+
+    get_list = PythonOperator(task_id="get_img_list",
+                              python_callable=get_dates,
+                              do_xcom_push=True)
 
     # Combine all commands into one large script
     # Task 1: Cloud fmask processing
@@ -49,8 +54,9 @@ def daily_sentinel_batch_processing_dag():
         timeout=3600,
         poke_interval=30,
         #date = date,
-        stage = "1"        
-    ).expand(date=dates)
+        stage = "1",
+        map_index_template="{{task.date}}"
+    ).expand(date=get_list.output)
 
     # Task 2: Topo masks processing
     topo_masks_processing = SlurmJobHandlingSensor.partial(
@@ -64,8 +70,9 @@ def daily_sentinel_batch_processing_dag():
         timeout=3600,
         poke_interval=30,
         #date = date,
-        stage = "2"       
-    ).expand(date=dates)
+        stage = "2",       
+        map_index_template="{{task.date}}"
+    ).expand(date=get_list.output)
 
 
     # Task 3: Surface reflectance processing
@@ -80,8 +87,9 @@ def daily_sentinel_batch_processing_dag():
         timeout=3600,
         poke_interval=30,
         #date = date,
-        stage = "3"      
-    ).expand(date=dates)
+        stage = "3",      
+        map_index_template="{{task.date}}"
+    ).expand(date=get_list.output)
 
     # Task 4: Water index processing
     water_index_processing = SlurmJobHandlingSensor.partial(
@@ -95,8 +103,9 @@ def daily_sentinel_batch_processing_dag():
         timeout=3600,
         poke_interval=30,
         #date = date,
-        stage = "4"      
-    ).expand(date=dates)
+        stage = "4",      
+        map_index_template="{{task.date}}"
+    ).expand(date=get_list.output)
 
     # Task 5: Fractional cover processing
     fractional_cover_processing = SlurmJobHandlingSensor.partial(
@@ -110,10 +119,11 @@ def daily_sentinel_batch_processing_dag():
         timeout=3600,
         poke_interval=30,
         #date = date,
-        stage = "5"      
-    ).expand(date=dates)
+        stage = "5",      
+        map_index_template="{{task.date}}"
+    ).expand(date=get_list.output)
 
     # Task Dependency Setup
-    cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
+    get_list >> cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
 
 dag_instance = daily_sentinel_batch_processing_dag()
