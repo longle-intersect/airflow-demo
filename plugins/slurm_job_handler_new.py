@@ -27,16 +27,17 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
         self.date = date
         self.processing_stage = stage
 
+        from airflow.operators.python import get_current_context
+        context = get_current_context()
+        map_index = context['ti'].map_index  # Accessing the map index for the current task instance
+        context['ti'].map_index = self.script_id + str(map_index)
+        self.log.info(f"Processing task with map_index: {context['ti'].map_index}, date: {self.date}, stage: {self.processing_stage}")
+
     #def execute(self, context):
     #    job_id = self._submit_job()
     #    return job_id
     
     def poke(self, context):
-
-        map_index = context['ti'].map_index  # Accessing the map index for the current task instance
-        context['ti'].map_index = self.script_id + str(map_index)
-        self.log.info(f"Processing task with map_index: {context['ti'].map_index}, date: {self.date}, stage: {self.processing_stage}")
-
 
         if not self.job_id:
             #self.script_path = self._create_slurm_script()
