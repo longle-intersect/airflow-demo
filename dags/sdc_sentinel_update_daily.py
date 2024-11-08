@@ -35,7 +35,7 @@ default_args = {
 def daily_sentinel_batch_processing_dag():
 
     def get_dates():
-        return ["20241011", "20241001"]  # Assuming these dates are dynamically determined elsewhere
+        return ["20241018", "20241011", "20241008", "20241001"]  # Assuming these dates are dynamically determined elsewhere
 
     get_list = PythonOperator(task_id="get_img_list",
                               python_callable=get_dates,
