@@ -19,14 +19,14 @@ default_args = {
     'start_date': datetime(2024, 11, 1),
 }
 
-
-with DAG(
-    dag_id="test_dmt_image_processing",
-    description='Test loop dmt async',    
+@dag(
+    dag_id="test_dmt_parallel",
     default_args=default_args,
-    schedule_interval=None,  # No automatic triggering
-    tags=["dynamic", "image_processing", "parallel"]
-) as dag:
+    description='Test dmt async',    
+    schedule=None,
+    catchup=True,
+    #max_active_runs=1,  # <-- I have tried removing this, and the problem persists. 
+)
 def image_processing_dag():
     @task
     def get_data_samples():
