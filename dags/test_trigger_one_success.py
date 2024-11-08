@@ -2,9 +2,21 @@ import time
 import pendulum
 from airflow.decorators import dag, task
 
+# DAG Configuration
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 0,
+    'retry_delay': timedelta(minutes=2),
+    'start_date': datetime(2024, 11, 1),
+}
 
 @dag(
     dag_id="test_trigger_one_success",
+    default_args=default_args,
+    description='Test trigger one success',    
     schedule=None,
     start_date=pendulum.datetime(2024, 11, 1, tz="UTC"),
     catchup=True,
