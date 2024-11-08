@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import time
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.decorators import dag, task
 
 
 # Simulating the delay within each function
