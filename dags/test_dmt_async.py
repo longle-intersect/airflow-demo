@@ -54,7 +54,7 @@ def image_processing_dag():
         return f"{sample} uploaded"
 
     samples = get_data_samples()
-    downloaded = download_image.expand(samples=samples)
+    downloaded = download_image.expand(sample=samples)
     processed = process_image.expand(data=downloaded)
     uploaded = upload_image.expand(data=processed)
 
