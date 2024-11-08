@@ -10,14 +10,14 @@ from sentinel_utils import *
 #local_path = '/home/airflow/slurm_scripts/'
 
 class SlurmJobHandlingSensor(BaseSensorOperator):
-    template_fields = ('date', 'stage')
+    template_fields = ('date', 'processing_stage')
 
     @apply_defaults
     def __init__(self, ssh_conn_id, script_name, remote_path, local_path,
                  date, stage, *args, **kwargs):
         super(SlurmJobHandlingSensor, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
-        self.script_id = script_name
+        #self.script_id = script_name
         self.script_id = f'sentt_{date}'
         self.script_name = self.script_id + ".slurm"
         self.remote_path = remote_path
