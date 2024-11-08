@@ -1,5 +1,5 @@
 import time
-import pendulum
+from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 
 # DAG Configuration
@@ -18,9 +18,9 @@ default_args = {
     default_args=default_args,
     description='Test trigger one success',    
     schedule=None,
-    start_date=pendulum.datetime(2024, 11, 1, tz="UTC"),
+    start_date=datetime(2024, 11, 1),
     catchup=True,
-    max_active_runs=1,  # <-- I have tried removing this, and the problem persists. 
+    #max_active_runs=1,  # <-- I have tried removing this, and the problem persists. 
 )
 def etl_sleep():
 
