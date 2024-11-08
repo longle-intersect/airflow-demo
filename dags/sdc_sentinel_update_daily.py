@@ -11,8 +11,8 @@ from airflow.operators.python import PythonOperator
 from slurm_job_handler_new import SlurmJobHandlingSensor
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-remote_path='/home/lelong/log_airflow_slurm/scripts',
-local_path='/home/airflow/slurm_scripts', 
+remote_path='/home/lelong/log_airflow_slurm/scripts/'
+local_path='/home/airflow/slurm_scripts/' 
 
 # DAG Configuration
 default_args = {
@@ -34,7 +34,7 @@ default_args = {
      tags=['sdc', 'sentinel'])
 def daily_sentinel_batch_processing_dag():
 
-    dates = ["20241008", "20241001"]  # Assuming these dates are dynamically determined elsewhere
+    dates = ["20241011", "20241001"]  # Assuming these dates are dynamically determined elsewhere
 
     # Combine all commands into one large script
     # Task 1: Cloud fmask processing
