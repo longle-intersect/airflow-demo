@@ -71,7 +71,7 @@ def daily_sentinel_batch_processing_dag():
             poke_interval=30,
             date = date,
             stage = "2",       
-        ).expand(date=get_list.output)
+        )
 
 
         # Task 3: Surface reflectance processing
