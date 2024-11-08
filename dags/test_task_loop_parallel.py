@@ -22,10 +22,23 @@ def upload_image(sample):
     time.sleep(sample)  # Simulate a 5-second upload time
     return f"{sample}_uploaded"
 
+# DAG Configuration
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 0,
+    'retry_delay': timedelta(minutes=2),
+    'start_date': datetime(2024, 11, 1),
+}
+
+
 with DAG(
     dag_id="test_continuous_image_processing",
+    description='Test loop async',    
+    default_args=default_args,
     schedule_interval=None,  # No automatic triggering
-    start_date=dt.datetime(2024, 11, 1),  # Adjust start date as needed
     tags=["dynamic", "image_processing", "parallel"]
 ) as dag:
 
