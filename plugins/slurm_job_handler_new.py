@@ -33,6 +33,11 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
     
     def poke(self, context):
 
+        map_index = context['ti'].map_index  # Accessing the map index for the current task instance
+        context['ti'].map_index = self.script_id + map_index
+        self.log.info(f"Processing task with map_index: {context['ti'].map_index}, date: {self.date}, stage: {self.processing_stage}")
+
+
         if not self.job_id:
             #self.script_path = self._create_slurm_script()
             self.script_stage = generate_script_stage(self.date,
