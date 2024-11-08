@@ -20,8 +20,8 @@ default_args = {
     'depends_on_past': False,
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    'retries': 0,
+    'retry_delay': timedelta(minutes=2),
     'start_date': datetime(2024, 11, 1),
 }
 
@@ -37,166 +37,83 @@ def daily_sentinel_batch_processing_dag():
     dates = ["20241008", "20241001"]  # Assuming these dates are dynamically determined elsewhere
 
     # Combine all commands into one large script
-
-    # Define all tasks
-    # script_stage_1_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s1.slurm',
-    #                                           'stage': '1',
-    #                                           'stage_script': f'{script_stage_1}'})
-
     # Task 1: Cloud fmask processing
-    @task
-    def batch_cloud_fmask_processing(date):
+    cloud_fmask_processing = SlurmJobHandlingSensor.partial(
+        task_id='sentt_batch_s1',
+        ssh_conn_id='slurm_ssh_connection',
+        script_name='sentt_batch_s1',
+        remote_path=remote_path,
+        local_path=local_path, 
+        #stage_script=script_stage_1,
+        #dag=dag,
+        timeout=3600,
+        poke_interval=30,
+        #date = date,
+        stage = "1"        
+    ).expand(date=dates)
 
-        #s1_job_list = []
-
-        #for date in dates:
-
-        script_name = f'sentt_{date}'
-        script_stage_1 = f"""
-# Execute cloud fmask processing
-qv_sentinel2cloud_fmask.py --toaref10 cemsre_t55hdv_{date}_ab0m5.img
-if [ $? -ne 0 ]; then
-echo "Failed at stage 1: Cloud fmask processing."
-exit 1
-fi
-"""    
-        logging.INFO(f'{script_stage_1}')
-        
-        cloud_fmask_processing = SlurmJobHandlingSensor(
-            task_id=f'{script_name}_s1',
-            ssh_conn_id='slurm_ssh_connection',
-            script_name=f'{script_name}_s1.slurm',
-            remote_path=remote_path,
-            local_path=local_path, 
-            stage_script=script_stage_1,
-            #dag=dag,
-            timeout=3600,
-            poke_interval=30,
-        )
-
-        #s1_job_list.append(cloud_fmask_processing)
-
-        return date
+    # Task 2: Topo masks processing
+    topo_masks_processing = SlurmJobHandlingSensor.partial(
+        task_id='sentt_batch_s2',
+        ssh_conn_id='slurm_ssh_connection',
+        script_name='sentt_batch_s2',
+        remote_path=remote_path,
+        local_path=local_path, 
+        #stage_script=script_stage_1,
+        #dag=dag,
+        timeout=3600,
+        poke_interval=30,
+        #date = date,
+        stage = "2"       
+    ).expand(date=dates)
 
 
-    @task
-    def batch_topo_masks_processing(date):
+    # Task 3: Surface reflectance processing
+    surface_reflectance_processing = SlurmJobHandlingSensor.partial(
+        task_id='sentt_batch_s3',
+        ssh_conn_id='slurm_ssh_connection',
+        script_name='sentt_batch_s3',
+        remote_path=remote_path,
+        local_path=local_path, 
+        #stage_script=script_stage_1,
+        #dag=dag,
+        timeout=3600,
+        poke_interval=30,
+        #date = date,
+        stage = "3"      
+    ).expand(date=dates)
 
-        #for date in dates:
-        script_name = f'sentt_{date}'
-        script_stage_2=f"""
-qv_sentinel2topomasks.py --toaref10 cemsre_t55hdv_{date}_ab0m5.img
-if [ $? -ne 0 ]; then
-    echo "Failed at stage 2: Topo masks processing."
-    exit 1
-fi
-"""
-        # Task 2: Topo masks processing
-        topo_masks_processing = SlurmJobHandlingSensor(
-            task_id=f'{script_name}_s2',
-            ssh_conn_id='slurm_ssh_connection',
-            script_name=f'{script_name}_s2.slurm',
-            remote_path=remote_path,
-            local_path=local_path, 
-            stage_script=script_stage_2,
-            #dag=dag,
-            timeout=3600,
-            poke_interval=30,
-        )
+    # Task 4: Water index processing
+    water_index_processing = SlurmJobHandlingSensor.partial(
+        task_id='sentt_batch_s4',
+        ssh_conn_id='slurm_ssh_connection',
+        script_name='sentt_batch_s4',
+        remote_path=remote_path,
+        local_path=local_path, 
+        #stage_script=script_stage_1,
+        #dag=dag,
+        timeout=3600,
+        poke_interval=30,
+        #date = date,
+        stage = "4"      
+    ).expand(date=dates)
 
-        return date
-
-
-    @task
-    def batch_surface_reflectance_processing(date):
-
-        script_name = f'sentt_{date}'
-        script_stage_3=f"""
-doSfcRefSentinel2.py --toaref cemsre_t55hdv_{date}_ab0m5.img
-if [ $? -ne 0 ]; then
-    echo "Failed at stage 3: Surface reflectance processing."
-    exit 1
-fi    
-"""
-
-        # Task 3: Surface reflectance processing
-        surface_reflectance_processing = SlurmJobHandlingSensor(
-            task_id=f'{script_name}_s3',
-            ssh_conn_id='slurm_ssh_connection',
-            script_name=f'{script_name}_s3.slurm',
-            remote_path=remote_path,
-            local_path=local_path, 
-            stage_script=script_stage_3,        
-            #dag=dag,
-            timeout=3600,
-            poke_interval=30,
-        )
-
-        return date
-
-    @task
-    def batch_water_index_processing(date):
-
-        script_name = f'sentt_{date}'
-        script_stage_4=f"""
-qv_water_index2015.py cemsre_t55hdv_{date}_abam5.img cemsre_t55hdv_{date}_abbm5.img --omitothermasks
-if [ $? -ne 0 ]; then
-    echo "Failed at stage 4: Water index processing."
-    exit 1
-fi    
-"""
-       # Task 4: Water index processing
-        water_index_processing = SlurmJobHandlingSensor(
-            task_id=f'{script_name}_s4',
-            ssh_conn_id='slurm_ssh_connection',
-            script_name=f'{script_name}_s4.slurm',
-            remote_path=remote_path,
-            local_path=local_path,
-            stage_script=script_stage_4,         
-            #dag=dag,
-            timeout=3600,
-            poke_interval=30,
-        )
-
-        return date
-
-    @task
-    def batch_fractional_cover_processing(date):
-
-        script_name = f'sentt_{date}'
-        script_stage_5=f"""
-qv_fractionalcover_sentinel2.py cemsre_t55hdv_{date}_abam5.img
-if [ $? -ne 0 ]; then
-    echo "Failed at stage 5: Fractional cover processing."
-    exit 1
-fi    
-"""
-        # Define all tasks
-        # script_stage_5_path = create_slurm_script(**{'script_name': f'{dag.dag_id}_s5.slurm',
-        #                                           'stage': '5',
-        #                                           'stage_script': f'{script_stage_5}'})
-        # Task 8: Fractional cover processing
-        fractional_cover_processing = SlurmJobHandlingSensor(
-            task_id=f'{script_name}_s5',
-            ssh_conn_id='slurm_ssh_connection',
-            script_name=f'{script_name}_s5.slurm',
-            remote_path=remote_path,
-            local_path=local_path,
-            stage_script=script_stage_5,        
-            #dag=dag,
-            timeout=3600,
-            poke_interval=30,
-        )
-
-        return date
+    # Task 5: Fractional cover processing
+    fractional_cover_processing = SlurmJobHandlingSensor.partial(
+        task_id='sentt_batch_s5',
+        ssh_conn_id='slurm_ssh_connection',
+        script_name='sentt_batch_s5',
+        remote_path=remote_path,
+        local_path=local_path, 
+        #stage_script=script_stage_1,
+        #dag=dag,
+        timeout=3600,
+        poke_interval=30,
+        #date = date,
+        stage = "5"      
+    ).expand(date=dates)
 
     # Task Dependency Setup
-    #cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
-
-    s1_dates = batch_cloud_fmask_processing.expand(date=dates)
-    s2_dates = batch_topo_masks_processing.expand(date=s1_dates)
-    s3_dates = batch_surface_reflectance_processing.expand(date=s2_dates)
-    s4_dates = batch_water_index_processing.expand(date=s3_dates)
-    s5_dates = batch_fractional_cover_processing.expand(date=s4_dates)
+    cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
 
 dag_instance = daily_sentinel_batch_processing_dag()
