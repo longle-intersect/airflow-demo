@@ -85,13 +85,11 @@ def daily_sentinel_batch_ingest_processing_dag():
         python_callable=parse_file_list,
         provide_context=True  # This ensures kwargs can be accessed within the callable
     )
-
-    dates = parse_new_list()
-
+    #dates = parse_new_list()
     # Combine all commands into one large script
     with TaskGroup(group_id='image_processing') as processing:
         pass
-        for date in dates:
+        for date in get_new_list.output:
             with TaskGroup(group_id=f'process_{date}') as tg:
                 # Task 1: Cloud fmask processing
                 cloud_fmask_processing = SlurmJobHandlingSensor(
