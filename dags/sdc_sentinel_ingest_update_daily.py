@@ -12,6 +12,7 @@ from airflow.operators.python import PythonOperator
 from slurm_job_handler_new import SlurmJobHandlingSensor
 from airflow.utils.task_group import TaskGroup
 from airflow.models.baseoperator import chain
+from airflow.models import XCom
 import base64
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -30,6 +31,11 @@ def parse_file_list(ti):
     processed_list = ["cemsre_" + filename for filename in processed_list]
 
     return processed_list
+
+def parse_new_list(**kwargs):
+    ti = kwargs['ti']
+    file_list_str = ti.xcom_pull(task_ids='get_new_list')
+    return file_list_str
 
 # DAG Configuration
 default_args = {
@@ -74,10 +80,13 @@ def daily_sentinel_batch_ingest_processing_dag():
     )
 
     # PythonOperator to get the list of files from XCom
-    get_file_list = PythonOperator(
-        task_id='get_file_list',
-        python_callable=parse_file_list
+    get_new_list = PythonOperator(
+        task_id='get_new_list',
+        python_callable=parse_file_list,
+        provide_context=True  # This ensures kwargs can be accessed within the callable
     )
+
+    dates = parse_new_list()
 
     # Combine all commands into one large script
     with TaskGroup(group_id='image_processing') as processing:
