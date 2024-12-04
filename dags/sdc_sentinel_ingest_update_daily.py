@@ -27,15 +27,23 @@ default_args = {
 }
 
 
-@dag(dag_id='sdc_sentinel_batch_update_daily_taskgroup',
+@dag(dag_id='sdc_sentinel_batch_ingest_update_daily',
      default_args=default_args,
-     description='Daily Update Sentinel-2 Imagery TaskGroup on SDC',
+     description='Daily Ingest and Update Sentinel-2 Imagery using TaskGroup on SDC',
      schedule_interval=None,
      start_date=days_ago(1),
      tags=['sdc', 'sentinel'])
 def daily_sentinel_batch_processing_dag():
 
-    dates = ["20241203"]  # Assuming these dates are dynamically determined elsewhere
+Read_my_IP = BashOperator(
+    # Task ID has to be the combination of alphanumeric chars, dashes, dots, and underscores 
+    task_id='Read_my_IP',
+    # The last line will be pushed to next task
+    bash_command="hostname -i | awk '{print $1}'",
+    do_xcom_push=True
+)
+
+    dates = ["20241018", "20241011", "20241008", "20241001"]  # Assuming these dates are dynamically determined elsewhere
 
     # get_list = PythonOperator(task_id="get_img_list",
     #                           python_callable=get_dates,
