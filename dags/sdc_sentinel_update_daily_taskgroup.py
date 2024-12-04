@@ -55,7 +55,7 @@ def daily_sentinel_batch_processing_dag():
         with TaskGroup(group_id=f'process_{date}') as tg:
             # Task 1: Cloud fmask processing
             cloud_fmask_processing = SlurmJobHandlingSensor(
-                task_id=f'sentt_{date}_s1',
+                task_id=f'{date}_s1',
                 ssh_conn_id='slurm_ssh_connection',
                 script_name=f'sentt_{date}_s1',
                 remote_path=remote_path,
@@ -70,7 +70,7 @@ def daily_sentinel_batch_processing_dag():
 
             # Task 2: Topo masks processing
             topo_masks_processing = SlurmJobHandlingSensor(
-                task_id=f'sentt_{date}_s2',
+                task_id=f'{date}_s2',
                 ssh_conn_id='slurm_ssh_connection',
                 script_name=f'sentt_{date}_s2',
                 remote_path=remote_path,
@@ -86,7 +86,7 @@ def daily_sentinel_batch_processing_dag():
 
             # Task 3: Surface reflectance processing
             surface_reflectance_processing = SlurmJobHandlingSensor(
-                task_id=f'sentt_{date}_s3',
+                task_id=f'{date}_s3',
                 ssh_conn_id='slurm_ssh_connection',
                 script_name=f'sentt_{date}_s3',
                 remote_path=remote_path,
@@ -101,7 +101,7 @@ def daily_sentinel_batch_processing_dag():
 
             # Task 4: Water index processing
             water_index_processing = SlurmJobHandlingSensor(
-                task_id=f'sentt_{date}_s4',
+                task_id=f'{date}_s4',
                 ssh_conn_id='slurm_ssh_connection',
                 script_name=f'sentt_{date}_s4',
                 remote_path=remote_path,
@@ -116,7 +116,7 @@ def daily_sentinel_batch_processing_dag():
 
             # Task 5: Fractional cover processing
             fractional_cover_processing = SlurmJobHandlingSensor(
-                task_id=f'sentt_{date}_s5',
+                task_id=f'{date}_s5',
                 ssh_conn_id='slurm_ssh_connection',
                 script_name=f'sentt_{date}_s5',
                 remote_path=remote_path,
