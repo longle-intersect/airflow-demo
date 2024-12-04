@@ -26,7 +26,7 @@ def parse_file_list(ti):
     decoded_list = base64.b64decode(file_list).decode()
     print(decoded_list)
     pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
-    processed_list = [pattern.search(filename).group(0).lower() for filename in decoded_list]
+    processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
     processed_list = ["cemsre_" + filename for filename in processed_list]
 
     return processed_list
@@ -39,7 +39,7 @@ default_args = {
     'email_on_retry': False,
     'retries': 0,
     'retry_delay': timedelta(minutes=2),
-    'start_date': datetime(2024, 11, 1),
+    'start_date': datetime(2024, 12, 1),
 }
 
 
