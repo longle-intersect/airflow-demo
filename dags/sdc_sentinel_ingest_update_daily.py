@@ -1,6 +1,7 @@
 import sys
 import logging
 sys.path.insert(0, '/opt/airflow/dags/repo/plugins')
+import re
 from airflow import DAG
 from airflow.decorators import dag, task
 from airflow.operators.bash import BashOperator
@@ -17,9 +18,16 @@ remote_path='/home/lelong/log_airflow_slurm/scripts/'
 local_path='/home/airflow/slurm_scripts/' 
 
 # Function to parse the output and extract file names
+
+# Function to extract the tile identifier and date from filenames
 def parse_file_list(ti):
     file_list = ti.xcom_pull(task_ids='download_files')
-    return file_list.split('\n')
+    decoded_list = list(base64.b64decode(file_list).decode())
+    pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
+    processed_list = [pattern.search(filename).group(0).lower() for filename in decoded_list]
+    processed_list = ["cemsre_" + filename for filename in processed_list]
+
+    return processed_list
 
 # DAG Configuration
 default_args = {
