@@ -10,6 +10,7 @@ from airflow.utils.dates import days_ago
 from airflow.operators.python import PythonOperator
 from slurm_job_handler_new import SlurmJobHandlingSensor
 from airflow.utils.task_group import TaskGroup
+from airflow.models.baseoperator import chain
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 remote_path='/home/lelong/log_airflow_slurm/scripts/'
