@@ -30,6 +30,10 @@ def parse_file_list(ti):
     processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
     processed_list = ["cemsre_" + filename for filename in processed_list]
 
+    with open(local_path + 'newer.txt', 'w') as f:
+        for file in processed_list:
+            f.write(f"{file}\n")
+
     return processed_list
 
 
@@ -81,14 +85,13 @@ def daily_sentinel_batch_ingest_processing_dag():
         provide_context=True
     )
 
-    execution_date = datetime.now().astimezone()
-    dates = XCom.get_one(execution_date=execution_date,
-                         task_id="get_new_list",
-                         dag_id="sdc_sentinel_batch_ingest_update_daily")   
-
-    print(dates)
     with TaskGroup(group_id='image_processing') as processing:
-        pass
+
+        with open(local_path + 'newer.txt') as f:
+            dates = f.read().splitlines()
+        
+        print(dates)
+        
         for date in dates:
             with TaskGroup(group_id=f'process_{date}') as tg:
                 # Task 1: Cloud fmask processing
