@@ -18,7 +18,16 @@ import base64
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 remote_path='/home/lelong/log_airflow_slurm/scripts/'
 local_path='/home/airflow/slurm_scripts/' 
-
+dates = ["cemsre_t55hbd_20241203",
+        "cemsre_t55jbf_20241203",
+        "cemsre_t55jbg_20241203",
+        "cemsre_t55jbh_20241203",
+        "cemsre_t55jbj_20241203",
+        "cemsre_t55jbk_20241203",
+        "cemsre_t55jcg_20241203",
+        "cemsre_t55jcj_20241203",
+        "cemsre_t55jck_20241203"
+]  # Assuming these dates are dynamically determined elsewhere
 # Function to parse the output and extract file names
 
 # Function to extract the tile identifier and date from filenames
@@ -45,15 +54,13 @@ default_args = {
 }
 
 
-with DAG(dag_id='sdc_sentinel_batch_ingest_update_daily_2',
+@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_2',
      default_args=default_args,
      description='Daily Ingest and Update Sentinel-2 Imagery using TaskGroup 2 on SDC',
      schedule_interval=None,
      start_date=days_ago(1),
-     tags=['sdc', 'sentinel']) as dag:
-
-    #dates = ["20241018", "20241011", "20241008", "20241001"]  # Assuming these dates are dynamically determined elsewhere
-
+     tags=['sdc', 'sentinel'])
+def daily_sentinel_batch_ingest_processing_dag():
     # get_list = PythonOperator(task_id="get_img_list",
     #                           python_callable=get_dates,
     #                           do_xcom_push=True)
@@ -75,106 +82,16 @@ with DAG(dag_id='sdc_sentinel_batch_ingest_update_daily_2',
     )
 
     @task
-    def parse_file_list(file_list):
-        #file_list = ti.xcom_pull(task_ids='download_files')
-        decoded_list = base64.b64decode(file_list).decode()
-        print(decoded_list)
+    def parse_file_list(xcom_arg):
+        file_list_str = base64.b64decode(xcom_arg).decode('utf-8')
         pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
-        processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
-        processed_list = ["cemsre_" + filename for filename in processed_list]
+        processed_list = [pattern.search(filename).group(0).lower() for filename in eval(file_list_str) if pattern.search(filename)]
+        return ["cemsre_" + filename for filename in processed_list]
 
-        return processed_list
+    parsed_files = parse_file_list(download_files.output)
+
+    print(parsed_files)
     
-    get_new_list = parse_file_list(download_files.output)
+dag_instance = daily_sentinel_batch_ingest_processing_dag()
 
-    def create_processing_tasks(date):
-
-        @task_group(group_id=f'process_{date}')
-        def process_image(date):
-            # Task 1: Cloud fmask processing
-            cloud_fmask_processing = SlurmJobHandlingSensor(
-                task_id=f'sentt_{date}_s1',
-                ssh_conn_id='slurm_ssh_connection',
-                script_name=f'sentt_{date}_s1',
-                remote_path=remote_path,
-                local_path=local_path, 
-                #stage_script=script_stage_1,
-                #dag=dag,
-                timeout=3600,
-                poke_interval=30,
-                date = date,
-                stage = "1"
-            )
-
-            # Task 2: Topo masks processing
-            topo_masks_processing = SlurmJobHandlingSensor(
-                task_id=f'sentt_{date}_s2',
-                ssh_conn_id='slurm_ssh_connection',
-                script_name=f'sentt_{date}_s2',
-                remote_path=remote_path,
-                local_path=local_path, 
-                #stage_script=script_stage_1,
-                #dag=dag,
-                timeout=3600,
-                poke_interval=30,
-                date = date,
-                stage = "2",       
-            )
-
-
-            # Task 3: Surface reflectance processing
-            surface_reflectance_processing = SlurmJobHandlingSensor(
-                task_id=f'sentt_{date}_s3',
-                ssh_conn_id='slurm_ssh_connection',
-                script_name=f'sentt_{date}_s3',
-                remote_path=remote_path,
-                local_path=local_path, 
-                #stage_script=script_stage_1,
-                #dag=dag,
-                timeout=3600,
-                poke_interval=30,
-                date = date,
-                stage = "3",      
-            )
-
-            # Task 4: Water index processing
-            water_index_processing = SlurmJobHandlingSensor(
-                task_id=f'sentt_{date}_s4',
-                ssh_conn_id='slurm_ssh_connection',
-                script_name=f'sentt_{date}_s4',
-                remote_path=remote_path,
-                local_path=local_path, 
-                #stage_script=script_stage_1,
-                #dag=dag,
-                timeout=3600,
-                poke_interval=30,
-                date = date,
-                stage = "4",      
-            )
-
-            # Task 5: Fractional cover processing
-            fractional_cover_processing = SlurmJobHandlingSensor(
-                task_id=f'sentt_{date}_s5',
-                ssh_conn_id='slurm_ssh_connection',
-                script_name=f'sentt_{date}_s5',
-                remote_path=remote_path,
-                local_path=local_path, 
-                #stage_script=script_stage_1,
-                #dag=dag,
-                timeout=3600,
-                poke_interval=30,
-                date = date,
-                stage = "5",      
-            )
-
-            # Task Dependency Setup
-            cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
-        
-        process_image(date)
-
-    @task_group
-    def process_files_task_group(dates):
-        create_processing_tasks(dates)
-    # expand method is used for the creation of dynamic tasks
-    process_files_task_group.expand(dates=get_new_list())
 
