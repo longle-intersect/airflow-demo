@@ -3,7 +3,7 @@ import logging
 sys.path.insert(0, '/opt/airflow/dags/repo/plugins')
 import re
 from airflow import DAG
-from airflow.decorators import dag, task
+from airflow.decorators import dag, task, task_group
 from airflow.operators.bash import BashOperator
 from airflow.providers.ssh.operators.ssh import SSHOperator
 from datetime import datetime, timedelta
@@ -83,31 +83,33 @@ def daily_sentinel_batch_ingest_processing_dag():
 
     get_new_list = parse_file_list(download_files.output)
 
-    @task
-    def create_processing_tasks(date_list):
-        #with TaskGroup("image_processing") as processing:
-        for date in date_list:
-            with TaskGroup(group_id=f'process_{date}') as tg:
-                # Define SlurmJobHandlingSensor tasks for each processing stage
-                last_task = None
-                for stage in range(1, 6):  # Assuming stages 1 to 5
-                    task = SlurmJobHandlingSensor(
-                        task_id=f'sentt_{date}_s{stage}',
-                        ssh_conn_id='slurm_ssh_connection',
-                        script_name=f'sentt_{date}_s{stage}',
-                        remote_path=remote_path,
-                        local_path=local_path,
-                        timeout=3600,
-                        poke_interval=30,
-                        date=date,
-                        stage=str(stage)
-                    )
-                    if last_task:
-                        last_task >> task
-                    last_task = task
+    # Define processing tasks within a task group dynamically
+    def create_slurm_sensor_tasks(date):
+        @task_group(group_id=f'process_{date}')
+        def process_date_group():
+            last_task = None
+            for stage in range(1, 6):  # Stages 1 to 5
+                task = SlurmJobHandlingSensor(
+                    task_id=f'sentt_{date}_s{stage}',
+                    ssh_conn_id='slurm_ssh_connection',
+                    script_name=f'sentt_{date}_s{stage}',
+                    remote_path=remote_path,
+                    local_path=local_path,
+                    timeout=3600,
+                    poke_interval=30,
+                    date=date,
+                    stage=str(stage)
+                )
+                if last_task:
+                    last_task >> task
+                last_task = task
+        return process_date_group
 
-    process_images = create_processing_tasks(get_new_list)
-    download_files >> get_new_list >> process_images
+    # Dynamically create task groups for each date
+    for date in get_new_list.output:
+        create_slurm_sensor_tasks(date)()
+
+    download_files >> get_new_list
 
 dag_instance = daily_sentinel_batch_ingest_processing_dag()
 
