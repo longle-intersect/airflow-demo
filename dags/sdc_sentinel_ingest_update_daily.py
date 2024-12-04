@@ -109,7 +109,7 @@ def daily_sentinel_batch_ingest_processing_dag():
             process_date_group(date)
             #return process_date_group
 
-    processing = create_slurm_sensor_tasks(get_new_list.output)
+    processing = create_slurm_sensor_tasks(get_new_list)
     #dates = parse_new_list()
     # Combine all commands into one large script
 
