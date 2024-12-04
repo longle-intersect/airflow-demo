@@ -58,7 +58,7 @@ default_args = {
      tags=['sdc', 'sentinel'])
 def daily_sentinel_batch_ingest_processing_dag():
 
-    #dates = ["20241018", "20241011", "20241008", "20241001"]  # Assuming these dates are dynamically determined elsewhere
+    dates = ["20241018", "20241011", "20241008", "20241001"]  # Assuming these dates are dynamically determined elsewhere
 
     # get_list = PythonOperator(task_id="get_img_list",
     #                           python_callable=get_dates,
@@ -87,12 +87,6 @@ def daily_sentinel_batch_ingest_processing_dag():
     )
 
     with TaskGroup(group_id='image_processing') as processing:
-
-        script_path = local_path + 'newer.txt'
-        with open(script_path) as f:
-            dates = f.read().splitlines()
-        
-        print(dates)
 
         for date in dates:
             with TaskGroup(group_id=f'process_{date}') as tg:
