@@ -23,7 +23,8 @@ local_path='/home/airflow/slurm_scripts/'
 # Function to extract the tile identifier and date from filenames
 def parse_file_list(ti):
     file_list = ti.xcom_pull(task_ids='download_files')
-    decoded_list = list(base64.b64decode(file_list).decode())
+    decoded_list = base64.b64decode(file_list).decode()
+    print(decoded_list)
     pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
     processed_list = [pattern.search(filename).group(0).lower() for filename in decoded_list]
     processed_list = ["cemsre_" + filename for filename in processed_list]
