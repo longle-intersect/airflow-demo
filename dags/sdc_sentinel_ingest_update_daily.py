@@ -81,7 +81,7 @@ def daily_sentinel_batch_ingest_processing_dag():
         provide_context=True
     )
 
-    execution_date = datetime.today()
+    execution_date = datetime(2024, 12, 5)
     dates = XCom.get_one(execution_date=execution_date,
                          task_id="get_new_list",
                          dag_id="sdc_sentinel_batch_ingest_update_daily")   
