@@ -56,7 +56,8 @@ def daily_sentinel_batch_ingest_processing_dag():
         cd $FILESTORE_PATH/download/;
         python ~/workspace/updateSentinel_fromSara.py --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2024-12-03 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"
         """,
-        timeout=3600,
+        conn_timeout=3600,
+        cmd_timeout=3600,
         do_xcom_push=True  # Pushes the command output to XCom
     )
 
