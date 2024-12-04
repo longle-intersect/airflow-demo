@@ -22,20 +22,15 @@ local_path='/home/airflow/slurm_scripts/'
 # Function to parse the output and extract file names
 
 # Function to extract the tile identifier and date from filenames
-def parse_file_list(ti):
-    file_list = ti.xcom_pull(task_ids='download_files')
-    decoded_list = base64.b64decode(file_list).decode()
-    print(decoded_list)
-    pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
-    processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
-    processed_list = ["cemsre_" + filename for filename in processed_list]
+# def parse_file_list(ti):
+#     file_list = ti.xcom_pull(task_ids='download_files')
+#     decoded_list = base64.b64decode(file_list).decode()
+#     print(decoded_list)
+#     pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
+#     processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
+#     processed_list = ["cemsre_" + filename for filename in processed_list]
 
-    return processed_list
-
-def parse_new_list(**kwargs):
-    ti = kwargs['ti']
-    file_list_str = ti.xcom_pull(task_ids='get_new_list')
-    return file_list_str
+#     return processed_list
 
 # DAG Configuration
 default_args = {
@@ -90,27 +85,33 @@ def daily_sentinel_batch_ingest_processing_dag():
 
     @task
     def create_processing_tasks(date_list):
-        with TaskGroup("image_processing") as processing:
-            for date in date_list:
-                with TaskGroup(group_id=f'process_{date}') as tg:
-                    # Define SlurmJobHandlingSensor tasks for each processing stage
-                    last_task = None
-                    for stage in range(1, 6):  # Assuming stages 1 to 5
-                        task = SlurmJobHandlingSensor(
-                            task_id=f'sentt_{date}_s{stage}',
-                            ssh_conn_id='slurm_ssh_connection',
-                            script_name=f'sentt_{date}_s{stage}',
-                            remote_path=remote_path,
-                            local_path=local_path,
-                            timeout=3600,
-                            poke_interval=30,
-                            date=date,
-                            stage=str(stage)
-                        )
-                        if last_task:
-                            last_task >> task
-                        last_task = task
-        return processing
+        #with TaskGroup("image_processing") as processing:
+        for date in date_list:
+            with TaskGroup(group_id=f'process_{date}') as tg:
+                # Define SlurmJobHandlingSensor tasks for each processing stage
+                last_task = None
+                for stage in range(1, 6):  # Assuming stages 1 to 5
+                    task = SlurmJobHandlingSensor(
+                        task_id=f'sentt_{date}_s{stage}',
+                        ssh_conn_id='slurm_ssh_connection',
+                        script_name=f'sentt_{date}_s{stage}',
+                        remote_path=remote_path,
+                        local_path=local_path,
+                        timeout=3600,
+                        poke_interval=30,
+                        date=date,
+                        stage=str(stage)
+                    )
+                    if last_task:
+                        last_task >> task
+                    last_task = task
+
+    process_images = create_processing_tasks(get_new_list)
+    download_files >> get_new_list >> process_images
+
+dag_instance = daily_sentinel_batch_ingest_processing_dag()
+
+
     
     #dates = parse_new_list()
     # Combine all commands into one large script
@@ -198,7 +199,3 @@ def daily_sentinel_batch_ingest_processing_dag():
                 # Task Dependency Setup
                 cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
     """
-    process_images = create_processing_tasks(get_new_list)
-    download_files >> get_new_list >> process_images
-
-dag_instance = daily_sentinel_batch_ingest_processing_dag()
