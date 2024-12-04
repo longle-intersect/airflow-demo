@@ -22,15 +22,16 @@ local_path='/home/airflow/slurm_scripts/'
 # Function to parse the output and extract file names
 
 # Function to extract the tile identifier and date from filenames
-# def parse_file_list(ti):
-#     file_list = ti.xcom_pull(task_ids='download_files')
-#     decoded_list = base64.b64decode(file_list).decode()
-#     print(decoded_list)
-#     pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
-#     processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
-#     processed_list = ["cemsre_" + filename for filename in processed_list]
+def parse_file_list(ti):
+    file_list = ti.xcom_pull(task_ids='download_files')
+    decoded_list = base64.b64decode(file_list).decode()
+    print(decoded_list)
+    pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
+    processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
+    processed_list = ["cemsre_" + filename for filename in processed_list]
 
-#     return processed_list
+    return processed_list
+
 
 # DAG Configuration
 default_args = {
@@ -74,14 +75,20 @@ def daily_sentinel_batch_ingest_processing_dag():
         do_xcom_push=True  # Pushes the command output to XCom
     )
 
-    @task(task_id="get_new_list")
-    def parse_file_list(file_list_str):
-        decoded_list = base64.b64decode(file_list_str).decode()
-        pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
-        processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
-        return ["cemsre_" + filename for filename in processed_list]
+    get_new_list = PythonOperator(
+        task_id='get_new_list',
+        python_callable=parse_file_list,
+        provide_context=True
+    )
 
-    get_new_list = parse_file_list(download_files.output)
+    # @task(task_id="get_new_list")
+    # def parse_file_list(file_list_str):
+    #     decoded_list = base64.b64decode(file_list_str).decode()
+    #     pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
+    #     processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
+    #     return ["cemsre_" + filename for filename in processed_list]
+
+    # get_new_list = parse_file_list(download_files.output)
 
     # Define processing tasks within a task group dynamically
     @task_group(group_id='image_processing')
@@ -109,7 +116,7 @@ def daily_sentinel_batch_ingest_processing_dag():
             process_date_group(date)
             #return process_date_group
 
-    processing = create_slurm_sensor_tasks(get_new_list)
+    processing = create_slurm_sensor_tasks(get_new_list.output)
     #dates = parse_new_list()
     # Combine all commands into one large script
 
