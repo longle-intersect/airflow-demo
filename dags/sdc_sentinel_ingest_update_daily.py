@@ -34,7 +34,7 @@ def parse_file_list(ti):
     with open(script_path, 'w') as f:
         for file in processed_list:
             f.write(f"{file}\n")
-            
+
     return processed_list
 
 
@@ -88,7 +88,8 @@ def daily_sentinel_batch_ingest_processing_dag():
 
     with TaskGroup(group_id='image_processing') as processing:
 
-        with open(local_path + 'newer.txt') as f:
+        script_path = local_path + 'newer.txt'
+        with open(script_path) as f:
             dates = f.read().splitlines()
         
         print(dates)
