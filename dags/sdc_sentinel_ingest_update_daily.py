@@ -30,10 +30,11 @@ def parse_file_list(ti):
     processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
     processed_list = ["cemsre_" + filename for filename in processed_list]
 
-    with open(local_path + 'newer.txt', 'w') as f:
+    script_path = local_path + 'newer.txt'
+    with open(script_path, 'w') as f:
         for file in processed_list:
             f.write(f"{file}\n")
-
+            
     return processed_list
 
 
@@ -91,7 +92,7 @@ def daily_sentinel_batch_ingest_processing_dag():
             dates = f.read().splitlines()
         
         print(dates)
-        
+
         for date in dates:
             with TaskGroup(group_id=f'process_{date}') as tg:
                 # Task 1: Cloud fmask processing
