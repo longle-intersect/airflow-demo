@@ -53,7 +53,7 @@ default_args = {
      tags=['sdc', 'sentinel'])
 def daily_sentinel_batch_ingest_processing_dag():
 
-    dates = ["20241018", "20241011", "20241008", "20241001"]  # Assuming these dates are dynamically determined elsewhere
+    #dates = ["20241018", "20241011", "20241008", "20241001"]  # Assuming these dates are dynamically determined elsewhere
 
     # get_list = PythonOperator(task_id="get_img_list",
     #                           python_callable=get_dates,
@@ -81,6 +81,12 @@ def daily_sentinel_batch_ingest_processing_dag():
         provide_context=True
     )
 
+    execution_date = datetime.today()
+    dates = XCom.get_one(execution_date=execution_date,
+                         task_id="get_new_list",
+                         dag_id="sdc_sentinel_batch_ingest_update_daily")   
+
+    print(dates)
     with TaskGroup(group_id='image_processing') as processing:
         pass
         for date in dates:
@@ -201,7 +207,6 @@ def daily_sentinel_batch_ingest_processing_dag():
     # processing = create_slurm_sensor_tasks(get_new_list.output)
     #dates = parse_new_list()
     # Combine all commands into one large script
-
     download_files >> get_new_list >> processing
 
 dag_instance = daily_sentinel_batch_ingest_processing_dag()
