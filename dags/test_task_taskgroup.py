@@ -30,7 +30,7 @@ default_args = {
 }
 
 
-with DAG(dag_id='process_files', default_args=default_args, schedule_interval='@daily') as dag:
+with DAG(dag_id='test_process_files', default_args=default_args, schedule_interval=None) as dag:
     @task_group
     def process_files_task_group(file_path):
         process_file(file_path)

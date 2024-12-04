@@ -22,15 +22,15 @@ local_path='/home/airflow/slurm_scripts/'
 # Function to parse the output and extract file names
 
 # Function to extract the tile identifier and date from filenames
-def parse_file_list(ti):
-    file_list = ti.xcom_pull(task_ids='download_files')
-    decoded_list = base64.b64decode(file_list).decode()
-    print(decoded_list)
-    pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
-    processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
-    processed_list = ["cemsre_" + filename for filename in processed_list]
+# def parse_file_list(ti):
+#     file_list = ti.xcom_pull(task_ids='download_files')
+#     decoded_list = base64.b64decode(file_list).decode()
+#     print(decoded_list)
+#     pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
+#     processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
+#     processed_list = ["cemsre_" + filename for filename in processed_list]
 
-    return processed_list
+#     return processed_list
 
 
 # DAG Configuration
@@ -45,13 +45,12 @@ default_args = {
 }
 
 
-@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_2',
+with DAG(dag_id='sdc_sentinel_batch_ingest_update_daily_2',
      default_args=default_args,
      description='Daily Ingest and Update Sentinel-2 Imagery using TaskGroup 2 on SDC',
      schedule_interval=None,
      start_date=days_ago(1),
-     tags=['sdc', 'sentinel'])
-def daily_sentinel_batch_ingest_processing_dag():
+     tags=['sdc', 'sentinel']) as dag:
 
     #dates = ["20241018", "20241011", "20241008", "20241001"]  # Assuming these dates are dynamically determined elsewhere
 
@@ -75,14 +74,23 @@ def daily_sentinel_batch_ingest_processing_dag():
         do_xcom_push=True  # Pushes the command output to XCom
     )
 
-    get_new_list = PythonOperator(
-        task_id='get_new_list',
-        python_callable=parse_file_list,
-        #provide_context=True
-    )
+    @task
+    def parse_file_list(file_list):
+        #file_list = ti.xcom_pull(task_ids='download_files')
+        decoded_list = base64.b64decode(file_list).decode()
+        print(decoded_list)
+        pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
+        processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
+        processed_list = ["cemsre_" + filename for filename in processed_list]
+
+        return processed_list
+    
+    get_new_list = parse_file_list(download_files.output)
 
     def create_processing_tasks(date):
-        with TaskGroup(group_id=f'process_{date}') as tg:
+
+        @task_group(group_id=f'process_{date}')
+        def process_image(date):
             # Task 1: Cloud fmask processing
             cloud_fmask_processing = SlurmJobHandlingSensor(
                 task_id=f'sentt_{date}_s1',
@@ -162,13 +170,11 @@ def daily_sentinel_batch_ingest_processing_dag():
             # Task Dependency Setup
             cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
         
-        return tg
+        process_image(date)
 
-    with TaskGroup(group_id='image_processing') as processing:
-            # Create task groups dynamically
-            for date in get_new_list.output:
-                processing.set_downstream(create_processing_tasks(date))
+    @task_group
+    def process_files_task_group(dates):
+        create_processing_tasks(dates)
+    # expand method is used for the creation of dynamic tasks
+    process_files_task_group.expand(dates=get_new_list())
 
-    download_files >> get_new_list >> processing
-
-dag_instance = daily_sentinel_batch_ingest_processing_dag()

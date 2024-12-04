@@ -18,7 +18,15 @@ import base64
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 remote_path='/home/lelong/log_airflow_slurm/scripts/'
 local_path='/home/airflow/slurm_scripts/' 
-
+dates = ["cemsre_t55hbd_20241203",
+        "cemsre_t55jbf_20241203",
+        "cemsre_t55jbg_20241203",
+        "cemsre_t55jbh_20241203",
+        "cemsre_t55jbj_20241203",
+        "cemsre_t55jbk_20241203",
+        "cemsre_t55jcg_20241203",
+        "cemsre_t55jcj_20241203",
+        "cemsre_t55jck_20241203"]  # Assuming these dates are dynamically determined elsewhere
 # Function to parse the output and extract file names
 
 # Function to extract the tile identifier and date from filenames
@@ -57,8 +65,6 @@ default_args = {
      start_date=days_ago(1),
      tags=['sdc', 'sentinel'])
 def daily_sentinel_batch_ingest_processing_dag():
-
-    dates = ["20241018", "20241011", "20241008", "20241001"]  # Assuming these dates are dynamically determined elsewhere
 
     # get_list = PythonOperator(task_id="get_img_list",
     #                           python_callable=get_dates,
