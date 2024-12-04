@@ -48,7 +48,7 @@ def daily_sentinel_batch_ingest_processing_dag():
     #                           do_xcom_push=True)
 
     # SSH to list files in the directory
-    list_files = SSHOperator(
+    download_files = SSHOperator(
         task_id='download_files',
         ssh_conn_id='slurm_ssh_connection',
         command="""
