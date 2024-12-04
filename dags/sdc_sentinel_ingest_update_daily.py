@@ -12,6 +12,7 @@ from airflow.operators.python import PythonOperator
 from slurm_job_handler_new import SlurmJobHandlingSensor
 from airflow.utils.task_group import TaskGroup
 from airflow.models.baseoperator import chain
+import base64
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 remote_path='/home/lelong/log_airflow_slurm/scripts/'
@@ -56,13 +57,15 @@ def daily_sentinel_batch_ingest_processing_dag():
     #                           do_xcom_push=True)
 
     # SSH to list files in the directory
+    # ls *.img *.meta >> newer.txt;
+    # cat newer.txt;
     download_files = SSHOperator(
         task_id='download_files',
         ssh_conn_id='slurm_ssh_connection',
         command="""
         module load sdc_testing;
         cd $FILESTORE_PATH/download/;
-        python ~/workspace/updateSentinel_fromSara.py --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2024-12-03 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"
+        python ~/workspace/updateSentinel_fromSara.py --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2024-12-03 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C";
         """,
         conn_timeout=3600,
         cmd_timeout=3600,
