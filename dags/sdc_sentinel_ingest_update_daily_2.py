@@ -90,8 +90,15 @@ def daily_sentinel_batch_ingest_processing_dag():
 
     parsed_files = parse_file_list(download_files.output)
 
-    print(parsed_files)
     
+    @task_group(group_id='image_processing')
+    def process_date_group(date):
+        # Dummy implementation of task groups
+        print(f"Processing date: {date}")
+
+    for date in parsed_files:
+        process_date_group(date)
+
 dag_instance = daily_sentinel_batch_ingest_processing_dag()
 
 
