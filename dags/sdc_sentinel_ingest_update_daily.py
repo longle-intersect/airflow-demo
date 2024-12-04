@@ -81,7 +81,7 @@ def daily_sentinel_batch_ingest_processing_dag():
         provide_context=True
     )
 
-    execution_date = datetime.now(tz=datetime.timezone.utc)
+    execution_date = datetime.now().astimezone()
     dates = XCom.get_one(execution_date=execution_date,
                          task_id="get_new_list",
                          dag_id="sdc_sentinel_batch_ingest_update_daily")   
