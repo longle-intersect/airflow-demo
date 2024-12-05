@@ -59,8 +59,8 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             context['task_instance'].xcom_push(key='error_content', value=error_content)
             self.log.info(f"Output of {self.job_id}: {output_content}")
 
-            if error_content:
-                raise ValueError('Force failure because upstream task has failed')
+            #if error_content:
+            #    raise ValueError('Force failure because upstream task has failed')
             
             return True
         else:

@@ -44,9 +44,9 @@ def parse_file_list(ti):
             extracted = match.group(0).lower()
             # Prepend based on the prefix
             if filename.startswith("S2A"):
-                processed_list.append("cfmsre_" + extracted)
-            elif filename.startswith("S2B"):
                 processed_list.append("cemsre_" + extracted)
+            elif filename.startswith("S2B"):
+                processed_list.append("cfmsre_" + extracted)
             else:
                 processed_list.append(extracted)
 
