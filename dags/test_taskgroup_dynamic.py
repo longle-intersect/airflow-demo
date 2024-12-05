@@ -3,7 +3,7 @@ from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import task_group
 import pendulum
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 
 # Define a custom operator as a placeholder, assuming it takes a task_id and mapped_args
@@ -22,8 +22,21 @@ def set_mapped_args():
     #dummy_mapped_args = [1, 2, 3, 4, 5]
     Variable.set("output_of_start", dummy_mapped_args, serialize_json=True)
 
+# DAG Configuration
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 0,
+    'retry_delay': timedelta(minutes=2),
+    'start_date': datetime(2024, 12, 1),
+}
+
 @dag(
     dag_id="dynamic_task_group_dag",
+    default_args=default_args,
+    description='Test task group with different batch',
     schedule_interval= None, #"0 0 * * *",  # Runs daily at midnight
     catchup=False,
     start_date=datetime(2024, 12, 1, tzinfo=pendulum.timezone('Australia/Sydney'))
