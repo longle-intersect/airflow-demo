@@ -41,6 +41,8 @@ def parse_file_list(ti):
 
     Variable.set("new_list", processed_list, serialize_json=True)
 
+    return processed_list
+
 
 # DAG Configuration
 default_args = {
