@@ -50,8 +50,8 @@ def parse_file_list(ti):
             else:
                 processed_list.append(extracted)
 
+    print(processed_list)
     Variable.set("new_list", processed_list, serialize_json=True)
-
     return processed_list
 
 
