@@ -36,8 +36,19 @@ def parse_file_list(ti):
     decoded_list = base64.b64decode(file_list).decode()
     print(decoded_list)
     pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
-    processed_list = [pattern.search(filename).group(0).lower() for filename in eval(decoded_list)]
-    processed_list = ["cemsre_" + filename for filename in processed_list]
+    processed_list = []
+    for filename in decoded_list:
+        # Extract the tile identifier and date
+        match = pattern.search(filename)
+        if match:
+            extracted = match.group(0).lower()
+            # Prepend based on the prefix
+            if filename.startswith("S2A"):
+                processed_list.append("cfmsre_" + extracted)
+            elif filename.startswith("S2B"):
+                processed_list.append("cemsre_" + extracted)
+            else:
+                processed_list.append(extracted)
 
     Variable.set("new_list", processed_list, serialize_json=True)
 
