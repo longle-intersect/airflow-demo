@@ -57,20 +57,12 @@ def dynamic_task_group_dag():
 
         @task_group(group_id="dynamic_task_group")
         def dynamic_task_group_node(mapped_args):
-            # Create a custom task for each mapped argument
-            for arg in mapped_args:
-                task = MyCustomOperator(
-                    task_id=f'task_{arg}',
-                    mapped_args=arg
-                )
-                task
+            task1 = MyCustomOperator(task_id='task1', mapped_args=mapped_args)
+            task1
 
-        # Expand the dynamic task group only if mapped_args is not empty
         if mapped_args:
-            dynamic_task_group_node(mapped_args=mapped_args)
+            dynamic_task_group_node.expand(mapped_args=mapped_args)
 
-    # Link the start task to the task group
-    start >> task_group_node()
+    [start >> task_group_node()]
 
-# Instantiate the DAG
 dag = dynamic_task_group_dag()
