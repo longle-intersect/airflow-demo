@@ -18,7 +18,7 @@ def set_mapped_args():
     # Simulate output that would be mapped to multiple tasks
     start = 1
     end = random.randint(3, 8)
-    dummy_mapped_args = range(start, end + 1)
+    dummy_mapped_args = list(range(start, end + 1))
     #dummy_mapped_args = [1, 2, 3, 4, 5]
     Variable.set("output_of_start", dummy_mapped_args, serialize_json=True)
 
