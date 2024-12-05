@@ -90,93 +90,94 @@ def daily_sentinel_batch_ingest_processing_dag():
     def process_date_group():
         mapped_args = Variable.get("new_list", default_var=[], deserialize_json=True)
 
-        @task_group(group_id="dynamic_task_group")
-        def dynamic_task_group_node(mapped_args):
-            # Create a custom task for each mapped argument
-            for date in mapped_args:
-            # Task 1: Cloud fmask processing
-                cloud_fmask_processing = SlurmJobHandlingSensor(
-                    task_id=f'{date}_s1',
-                    ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{date}_s1',
-                    remote_path=remote_path,
-                    local_path=local_path, 
-                    #stage_script=script_stage_1,
-                    #dag=dag,
-                    timeout=3600,
-                    poke_interval=30,
-                    date = date,
-                    stage = "1"
-                )
-
-                # Task 2: Topo masks processing
-                topo_masks_processing = SlurmJobHandlingSensor(
-                    task_id=f'{date}_s2',
-                    ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{date}_s2',
-                    remote_path=remote_path,
-                    local_path=local_path, 
-                    #stage_script=script_stage_1,
-                    #dag=dag,
-                    timeout=3600,
-                    poke_interval=30,
-                    date = date,
-                    stage = "2",       
-                )
-
-
-                # Task 3: Surface reflectance processing
-                surface_reflectance_processing = SlurmJobHandlingSensor(
-                    task_id=f'{date}_s3',
-                    ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{date}_s3',
-                    remote_path=remote_path,
-                    local_path=local_path, 
-                    #stage_script=script_stage_1,
-                    #dag=dag,
-                    timeout=3600,
-                    poke_interval=30,
-                    date = date,
-                    stage = "3",      
-                )
-
-                # Task 4: Water index processing
-                water_index_processing = SlurmJobHandlingSensor(
-                    task_id=f'{date}_s4',
-                    ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{date}_s4',
-                    remote_path=remote_path,
-                    local_path=local_path, 
-                    #stage_script=script_stage_1,
-                    #dag=dag,
-                    timeout=3600,
-                    poke_interval=30,
-                    date = date,
-                    stage = "4",      
-                )
-
-                # Task 5: Fractional cover processing
-                fractional_cover_processing = SlurmJobHandlingSensor(
-                    task_id=f'{date}_s5',
-                    ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{date}_s5',
-                    remote_path=remote_path,
-                    local_path=local_path, 
-                    #stage_script=script_stage_1,
-                    #dag=dag,
-                    timeout=3600,
-                    poke_interval=30,
-                    date = date,
-                    stage = "5",      
-                )
-
-                # Task Dependency Setup
-                cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
-
-
         # Expand the dynamic task group only if mapped_args is not empty
         if mapped_args:
-            dynamic_task_group_node(mapped_args=mapped_args)
+            for date in mapped_args:
+                @task_group(group_id=f"process_{date}")
+                def dynamic_task_group_node(date):
+                    # Create a custom task for each mapped argument
+                    
+                    
+                    # Task 1: Cloud fmask processing
+                        cloud_fmask_processing = SlurmJobHandlingSensor(
+                            task_id=f'{date}_s1',
+                            ssh_conn_id='slurm_ssh_connection',
+                            script_name=f'sentt_{date}_s1',
+                            remote_path=remote_path,
+                            local_path=local_path, 
+                            #stage_script=script_stage_1,
+                            #dag=dag,
+                            timeout=3600,
+                            poke_interval=30,
+                            date = date,
+                            stage = "1"
+                        )
+
+                        # Task 2: Topo masks processing
+                        topo_masks_processing = SlurmJobHandlingSensor(
+                            task_id=f'{date}_s2',
+                            ssh_conn_id='slurm_ssh_connection',
+                            script_name=f'sentt_{date}_s2',
+                            remote_path=remote_path,
+                            local_path=local_path, 
+                            #stage_script=script_stage_1,
+                            #dag=dag,
+                            timeout=3600,
+                            poke_interval=30,
+                            date = date,
+                            stage = "2",       
+                        )
+
+
+                        # Task 3: Surface reflectance processing
+                        surface_reflectance_processing = SlurmJobHandlingSensor(
+                            task_id=f'{date}_s3',
+                            ssh_conn_id='slurm_ssh_connection',
+                            script_name=f'sentt_{date}_s3',
+                            remote_path=remote_path,
+                            local_path=local_path, 
+                            #stage_script=script_stage_1,
+                            #dag=dag,
+                            timeout=3600,
+                            poke_interval=30,
+                            date = date,
+                            stage = "3",      
+                        )
+
+                        # Task 4: Water index processing
+                        water_index_processing = SlurmJobHandlingSensor(
+                            task_id=f'{date}_s4',
+                            ssh_conn_id='slurm_ssh_connection',
+                            script_name=f'sentt_{date}_s4',
+                            remote_path=remote_path,
+                            local_path=local_path, 
+                            #stage_script=script_stage_1,
+                            #dag=dag,
+                            timeout=3600,
+                            poke_interval=30,
+                            date = date,
+                            stage = "4",      
+                        )
+
+                        # Task 5: Fractional cover processing
+                        fractional_cover_processing = SlurmJobHandlingSensor(
+                            task_id=f'{date}_s5',
+                            ssh_conn_id='slurm_ssh_connection',
+                            script_name=f'sentt_{date}_s5',
+                            remote_path=remote_path,
+                            local_path=local_path, 
+                            #stage_script=script_stage_1,
+                            #dag=dag,
+                            timeout=3600,
+                            poke_interval=30,
+                            date = date,
+                            stage = "5",      
+                        )
+
+                        # Task Dependency Setup
+                        cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
+
+                dynamic_task_group_node(date)
 
     # Link the start task to the task group
     download_files >> get_new_list >> process_date_group()
