@@ -37,7 +37,7 @@ def parse_file_list(ti):
     print(decoded_list)
     pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
     processed_list = []
-    for filename in decoded_list:
+    for filename in eval(decoded_list):
         # Extract the tile identifier and date
         match = pattern.search(filename)
         if match:
