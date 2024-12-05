@@ -7,12 +7,16 @@ from datetime import datetime, timedelta
 import random
 
 # Define a custom operator as a placeholder, assuming it takes a task_id and mapped_args
-class MyCustomOperator(PythonOperator):
-    def __init__(self, **kwargs):
-        super().__init__(
-            python_callable=lambda: print("Processing", kwargs['mapped_args']),
-            **kwargs
-        )
+from airflow.models.baseoperator import BaseOperator
+
+class MyCustomOperator(BaseOperator):
+
+    def __init__(self, mapped_args, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.mapped_args = mapped_args
+
+    def execute(self, context):
+        self.cur_value = self.mapped_args.resolve(context)
 
 def set_mapped_args():
     # Simulate output that would be mapped to multiple tasks
