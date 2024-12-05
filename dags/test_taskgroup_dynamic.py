@@ -16,7 +16,8 @@ class MyCustomOperator(BaseOperator):
         self.mapped_args = mapped_args
 
     def execute(self, context):
-        self.cur_value = self.mapped_args.resolve(context)
+        print(f"This is task {self.mapped_args}")
+        #self.cur_value = self.mapped_args.resolve(context)
 
 def set_mapped_args():
     # Simulate output that would be mapped to multiple tasks
@@ -61,7 +62,7 @@ def dynamic_task_group_dag():
             for arg in mapped_args:
                 task = MyCustomOperator(
                     task_id=f'task_{arg}',
-                    mapped_args=mapped_args
+                    mapped_args=arg
                 )
                 task
 
