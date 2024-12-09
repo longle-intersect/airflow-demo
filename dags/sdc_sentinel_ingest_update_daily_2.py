@@ -87,7 +87,7 @@ def daily_sentinel_batch_ingest_processing_dag():
         command="""
         module load sdc_testing;
         cd $FILESTORE_PATH/download/;
-        python ~/workspace/updateSentinel_fromSara.py --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2024-12-04 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C";
+        python ~/workspace/updateSentinel_fromSara.py --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2024-12-06 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C";
         """,
         conn_timeout=3600,
         cmd_timeout=3600,
