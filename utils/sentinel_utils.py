@@ -48,31 +48,50 @@ def generate_script_stage(date, stage):
     if stage == "1":
         script_stage = f"""
 # Execute cloud fmask processing
-qv_sentinel2cloud_fmask.py --toaref10 {date}_ab0m5.img
+fileab=$(ls {date}_ab0*.img 2>/dev/null | head -n 1)
+
+qv_sentinel2cloud_fmask.py --toaref10 $fileab
 if [ $? -ne 0 ]; then
-echo "Failed at stage 1: Cloud fmask processing."
-exit 1
+    echo "Failed at stage 1: Cloud fmask processing."
+    exit 1
 fi
 """    
+# {date}_ab0m5.img
     elif stage == "2":
         script_stage = f"""
-qv_sentinel2topomasks.py --toaref10 {date}_ab0m5.img
-if [ $? -ne 0 ]; then
-    echo "Failed at stage 2: Topo masks processing."
-    exit 1
-fi
+for file in {date}_ab0*.img; do
+    qv_sentinel2topomasks.py --toaref10 $file
+    if [ $? -ne 0 ]; then
+        echo "Failed at stage 2: Topo masks processing."
+        exit 1
+    fi
+done
 """
+# {date}_ab0m5.img
     elif stage == "3":
         script_stage = f"""
-doSfcRefSentinel2.py --toaref {date}_ab0m5.img
-if [ $? -ne 0 ]; then
-    echo "Failed at stage 3: Surface reflectance processing."
-    exit 1
-fi    
+for file in {date}_ab0*.img; do
+    doSfcRefSentinel2.py --toaref $file
+    if [ $? -ne 0 ]; then
+        echo "Failed at stage 3: Surface reflectance processing."
+        exit 1
+    fi
+done    
 """
+# 
     elif stage == "4":
         script_stage = f"""
-qv_water_index2015.py {date}_abam5.img {date}_abbm5.img --omitothermasks
+# Find files matching the patterns
+fileaba=$(ls {date}_aba*.img 2>/dev/null | head -n 1)
+fileabb=$(ls {date}_abb*.img 2>/dev/null | head -n 1)
+
+# Check if both files exist
+if [ -z "$file1" ] || [ -z "$file2" ]; then
+    echo "Failed at stage 4: Required input files not found."
+    exit 1
+fi
+
+qv_water_index2015.py "$fileaba" "$fileabb" --omitothermasks
 if [ $? -ne 0 ]; then
     echo "Failed at stage 4: Water index processing."
     exit 1
@@ -80,7 +99,8 @@ fi
 """        
     elif stage == "5":
         script_stage =f"""
-qv_fractionalcover_sentinel2.py {date}_abam5.img
+fileaba=$(ls {date}_aba*.img 2>/dev/null | head -n 1)
+qv_fractionalcover_sentinel2.py "$fileaba"
 if [ $? -ne 0 ]; then
     echo "Failed at stage 5: Fractional cover processing."
     exit 1
