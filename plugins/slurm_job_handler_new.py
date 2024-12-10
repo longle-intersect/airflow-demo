@@ -36,6 +36,8 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
     #def execute(self, context):
     #    job_id = self._submit_job()
     #    return job_id
+
+        self.log.info(f"Processing of {self.date}:- Stage {self.processing_stage}")
     
     def poke(self, context):
 
@@ -57,6 +59,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             output_content, error_content = self._fetch_job_files()
             context['task_instance'].xcom_push(key='output_content', value=output_content)
             context['task_instance'].xcom_push(key='error_content', value=error_content)
+            context['task_instance'].xcom_push(key='image_id', value=self.date)
             self.log.info(f"Output of {self.job_id}: {output_content}")
 
             #if error_content:

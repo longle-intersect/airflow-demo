@@ -58,9 +58,9 @@ default_args = {
 }
 
 
-@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_3',
+@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_4',
      default_args=default_args,
-     description='Daily Ingest and Update Sentinel-2 Imagery using TaskGroup 3 on SDC',
+     description='Daily Ingest and Update Sentinel-2 Imagery using TaskGroup 4 on SDC',
      schedule_interval=None,
      start_date=days_ago(1),
      tags=['sdc', 'sentinel'])
@@ -97,14 +97,14 @@ def daily_sentinel_batch_ingest_processing_dag():
         # Expand the dynamic task group only if mapped_args is not empty
         if mapped_args:
             for i, date in enumerate(mapped_args):
-                @task_group(group_id=f"process_image_{i}")
+                @task_group(group_id=f"process_img_{i}")
                 def dynamic_task_group_node(date):
                     # Create a custom task for each mapped argument
                     
-                    
+                    for arg in mapped_args:
                     # Task 1: Cloud fmask processing
                         cloud_fmask_processing = SlurmJobHandlingSensor(
-                            task_id=f'img{i}_s1',
+                            task_id=f'i{i}_s1',
                             ssh_conn_id='slurm_ssh_connection',
                             script_name=f'sentt_{date}_s1',
                             remote_path=remote_path,
@@ -119,7 +119,7 @@ def daily_sentinel_batch_ingest_processing_dag():
 
                         # Task 2: Topo masks processing
                         topo_masks_processing = SlurmJobHandlingSensor(
-                            task_id=f'img{i}_s2',
+                            task_id=f'i{i}_s2',
                             ssh_conn_id='slurm_ssh_connection',
                             script_name=f'sentt_{date}_s2',
                             remote_path=remote_path,
@@ -135,7 +135,7 @@ def daily_sentinel_batch_ingest_processing_dag():
 
                         # Task 3: Surface reflectance processing
                         surface_reflectance_processing = SlurmJobHandlingSensor(
-                            task_id=f'img{i}_s3',
+                            task_id=f'i{i}_s3',
                             ssh_conn_id='slurm_ssh_connection',
                             script_name=f'sentt_{date}_s3',
                             remote_path=remote_path,
@@ -150,7 +150,7 @@ def daily_sentinel_batch_ingest_processing_dag():
 
                         # Task 4: Water index processing
                         water_index_processing = SlurmJobHandlingSensor(
-                            task_id=f'img{i}_s4',
+                            task_id=f'i{i}_s4',
                             ssh_conn_id='slurm_ssh_connection',
                             script_name=f'sentt_{date}_s4',
                             remote_path=remote_path,
@@ -165,7 +165,7 @@ def daily_sentinel_batch_ingest_processing_dag():
 
                         # Task 5: Fractional cover processing
                         fractional_cover_processing = SlurmJobHandlingSensor(
-                            task_id=f'img{i}_s5',
+                            task_id=f'i{i}_s5',
                             ssh_conn_id='slurm_ssh_connection',
                             script_name=f'sentt_{date}_s5',
                             remote_path=remote_path,
