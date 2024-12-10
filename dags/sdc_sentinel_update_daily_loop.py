@@ -35,15 +35,19 @@ default_args = {
 def daily_sentinel_batch_processing_dag():
 
     def get_dates():
-        return ["cemsre_t55hbd_20241203",
-                "cemsre_t55jbf_20241203",
-                "cemsre_t55jbg_20241203",
-                "cemsre_t55jbh_20241203",
-                "cemsre_t55jbj_20241203",
-                "cemsre_t55jbk_20241203",
-                "cemsre_t55jcg_20241203",
-                "cemsre_t55jcj_20241203",
-                "cemsre_t55jck_20241203"
+        return [#"cemsre_t55hbd_20241203",
+                #"cemsre_t55jbf_20241203",
+                #"cemsre_t55jbg_20241203",
+                #"cemsre_t55jbh_20241203",
+                #"cemsre_t55jbj_20241203",
+                #"cemsre_t55jbk_20241203",
+                #"cemsre_t55jcg_20241203",
+                #"cemsre_t55jcj_20241203",
+                #"cemsre_t55jck_20241203",
+                "cemsre_t54jul_20241209",
+                "cemsre_t54jup_20241209",
+                "cemsre_t54juq_20241209",
+                "cemsre_t54jvq_20241209"
                ]  # Assuming these dates are dynamically determined elsewhere
 
     get_list = PythonOperator(task_id="get_img_list",
