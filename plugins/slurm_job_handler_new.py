@@ -19,7 +19,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
         self.ssh_conn_id = ssh_conn_id
         #self.script_id = script_name
         self.script_id = f'sentt_{date}'
-        self.script_name = self.script_id + ".slurm"
+        self.script_name = self.script_id + "_s" + stage + ".slurm"
         self.remote_path = remote_path
         self.local_path = local_path
         #self.stage_script = stage_script
