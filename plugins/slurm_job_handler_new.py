@@ -7,6 +7,7 @@ from airflow.providers.ssh.hooks.ssh import SSHHook
 from airflow.sensors.base_sensor_operator import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
 from sentinel_utils import *
+from airflow.exceptions import AirflowException
 #local_path = '/home/airflow/slurm_scripts/'
 
 class SlurmJobHandlingSensor(BaseSensorOperator):
@@ -62,9 +63,10 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             context['task_instance'].xcom_push(key='image_id', value=self.date)
             self.log.info(f"Output of {self.job_id}: {output_content}")
 
-            #if error_content:
-            #    raise ValueError('Force failure because upstream task has failed')
-            
+            if error_content:
+                self.log.error(f"Error for job {self.job_id}: {error_content}")
+                raise AirflowException('Error in Slurm job execution: Task failed because of upstream errors')
+ 
             return True
         else:
             self.log.info(f"Job {self.job_id} is still running")

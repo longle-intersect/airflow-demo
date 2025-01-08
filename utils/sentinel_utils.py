@@ -86,7 +86,7 @@ fileaba=$(ls {date}_aba*.img 2>/dev/null | head -n 1)
 fileabb=$(ls {date}_abb*.img 2>/dev/null | head -n 1)
 
 # Check if both files exist
-if [ -z "$file1" ] || [ -z "$file2" ]; then
+if [ -z "$fileaba" ] || [ -z "$fileabb" ]; then
     echo "Failed at stage 4: Required input files not found."
     exit 1
 fi
