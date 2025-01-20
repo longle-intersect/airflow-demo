@@ -25,7 +25,7 @@ with DAG(dag_id='3ai_consumer_dag',
     
     wait_for_producer = ExternalTaskSensor(
         task_id='wait_for_producer',
-        external_dag_id='producer_dag',
+        external_dag_id='3ai_producer_dag',
         external_task_id='Load_Data',
         timeout=3600,
         poke_interval=30,
