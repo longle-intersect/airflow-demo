@@ -23,7 +23,7 @@ with DAG(dag_id='3ai_sequential_data_pipeline',
         description='Demo Sequential DAG Pattern',
         schedule_interval=None,
         start_date=days_ago(1),
-        tags=['sdc', 'sentinel']) as dag:
+        tags=['3ai', 'demo']) as dag:
     
     # Dummy task to mark the start of the pipeline
     start = DummyOperator(task_id='Start')
