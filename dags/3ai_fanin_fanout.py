@@ -42,17 +42,17 @@ with DAG(dag_id='3ai_fan_out_fan_in_pipeline',
     )
 
     # Fan-out: Multiple independent tasks processing parts of the data
-    def process_data_part(index):
-        def process():
-            df = generate_data_task.output
-            processed_data = df.iloc[index*20:(index+1)*20]  # Split data into chunks
-            processed_data['processed_value'] = processed_data['value'] * 2  # Simple processing
-            return processed_data
-        return process
+    def process_data_part(index, **kwargs):
+        ti = kwargs['ti']
+        df = ti.xcom_pull(task_ids='Generate_Data')
+        processed_data = df.iloc[index*20:(index+1)*20]  # Split data into chunks
+        processed_data['processed_value'] = processed_data['value'] * 2  # Simple processing
+        return processed_data
 
     process_tasks = [PythonOperator(
         task_id=f'Process_Part_{i}',
-        python_callable=process_data_part(i)
+        python_callable=process_data_part,
+        op_kwargs={'index': i}
     ) for i in range(5)]  # Creates 5 tasks to process parts of the data
 
     # Fan-in: Task to aggregate results
