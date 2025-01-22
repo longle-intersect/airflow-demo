@@ -1,50 +1,19 @@
 import sys
 import logging
 sys.path.insert(0, '/opt/airflow/dags/repo/plugins')
-import re
 from airflow import DAG
-from airflow.decorators import dag, task, task_group
+from airflow.decorators import dag, task
 from airflow.operators.bash import BashOperator
 from airflow.providers.ssh.operators.ssh import SSHOperator
 from datetime import datetime, timedelta
 from airflow.utils.dates import days_ago
 from airflow.operators.python import PythonOperator
-from slurm_job_handler_new import SlurmJobHandlingSensor
+from slurm_job_handler_lsat import SlurmJobHandlingSensor
 from airflow.utils.task_group import TaskGroup
-from airflow.models.baseoperator import chain
-from airflow.models import XCom, Variable
-import base64
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 remote_path='/home/lelong/log_airflow_slurm/scripts/'
 local_path='/home/airflow/slurm_scripts/' 
-
-# Function to parse the output and extract file names
-
-# Function to extract the tile identifier and date from filenames
-def parse_file_list(ti):
-    file_list = ti.xcom_pull(task_ids='download_files')
-    decoded_list = base64.b64decode(file_list).decode()
-    print(decoded_list)
-    pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
-    processed_list = []
-    for filename in eval(decoded_list):
-        # Extract the tile identifier and date
-        match = pattern.search(filename)
-        if match:
-            extracted = match.group(0).lower()
-            # Prepend based on the prefix
-            if filename.startswith("S2A"):
-                processed_list.append("cemsre_" + extracted)
-            elif filename.startswith("S2B"):
-                processed_list.append("cfmsre_" + extracted)
-            else:
-                processed_list.append(extracted)
-
-    print(processed_list)
-    Variable.set("new_list", processed_list, serialize_json=True)
-    return processed_list
-
 
 # DAG Configuration
 default_args = {
@@ -54,137 +23,253 @@ default_args = {
     'email_on_retry': False,
     'retries': 0,
     'retry_delay': timedelta(minutes=2),
-    'start_date': datetime(2024, 12, 9),
+    'start_date': datetime(2025, 1, 22),
 }
 
 
-@dag(dag_id='sdc_landsat_batch_ingest_update_daily',
+@dag(dag_id='sdc_landsat_ingest_batch_daily',
      default_args=default_args,
-     description='Daily Ingest and Update Landsat Imagery using TaskGroup on SDC',
+     description='Daily Ingest and Update Landsat Imagery on SDC',
      schedule_interval=None,
      start_date=days_ago(1),
      tags=['sdc', 'landsat'])
-def daily_sentinel_batch_ingest_processing_dag():
+def daily_landsat_batch_processing_dag():
+
+    def get_dates():
+     return ["l9olre_p089r079_20250114",
+             "l9olre_p089r084_20250114",
+             "l9olre_p089r085_20250114"
+            ]  # Assuming these dates are dynamically determined elsewhere
+
     # get_list = PythonOperator(task_id="get_img_list",
     #                           python_callable=get_dates,
     #                           do_xcom_push=True)
 
-    # SSH to list files in the directory
-    # ls *.img *.meta >> newer.txt;
-    # cat newer.txt;
-    download_files = SSHOperator(
-        task_id='download_files',
-        ssh_conn_id='slurm_ssh_connection',
-        command="""
-        module load sdc_testing;
-        cd $FILESTORE_PATH/download/;
-        python ~/workspace/updateSentinel_fromSara.py --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2024-12-09 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C";
-        """,
-        conn_timeout=3600,
-        cmd_timeout=3600,
-        do_xcom_push=True  # Pushes the command output to XCom
-    )
+    # Combine all commands into one large script
 
-    get_new_list = PythonOperator(
-        task_id="get_new_list",
-        python_callable=parse_file_list,
-    )
+    get_list = PythonOperator(task_id="get_img_list",
+                            python_callable=get_dates,
+                            do_xcom_push=True)
+    
+    for i, date in enumerate(get_dates()):
+        prefix = f"lsat_{date}"
+        with TaskGroup(group_id=f'process_img_{i}') as tg:
+            # Task 1: makeincidenceangles
+            make_incidence_angles = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s1',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s1',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "1"
+            )
 
-    @task_group(group_id='batch_processing')
-    def process_date_group():
-        mapped_args = Variable.get("new_list", default_var=[], deserialize_json=True)
-
-        # Expand the dynamic task group only if mapped_args is not empty
-        if mapped_args:
-            for i, date in enumerate(mapped_args):
-                @task_group(group_id=f"process_img_{i}")
-                def dynamic_task_group_node(date):
-                    # Create a custom task for each mapped argument
-                    
-                    # Task 1: Cloud fmask processing
-                    cloud_fmask_processing = SlurmJobHandlingSensor(
-                        task_id=f'i{i}_s1',
-                        ssh_conn_id='slurm_ssh_connection',
-                        script_name=f'sentt_{date}_s1',
-                        remote_path=remote_path,
-                        local_path=local_path, 
-                        #stage_script=script_stage_1,
-                        #dag=dag,
-                        timeout=3600,
-                        poke_interval=30,
-                        date = date,
-                        stage = "1"
-                    )
-
-                    # Task 2: Topo masks processing
-                    topo_masks_processing = SlurmJobHandlingSensor(
-                        task_id=f'i{i}_s2',
-                        ssh_conn_id='slurm_ssh_connection',
-                        script_name=f'sentt_{date}_s2',
-                        remote_path=remote_path,
-                        local_path=local_path, 
-                        #stage_script=script_stage_1,
-                        #dag=dag,
-                        timeout=3600,
-                        poke_interval=30,
-                        date = date,
-                        stage = "2",       
-                    )
+            # Task 2: toa_brdf_reflectance
+            toa_brdf_reflectance = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s2',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s2',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "2",       
+            )
 
 
-                    # Task 3: Surface reflectance processing
-                    surface_reflectance_processing = SlurmJobHandlingSensor(
-                        task_id=f'i{i}_s3',
-                        ssh_conn_id='slurm_ssh_connection',
-                        script_name=f'sentt_{date}_s3',
-                        remote_path=remote_path,
-                        local_path=local_path, 
-                        #stage_script=script_stage_1,
-                        #dag=dag,
-                        timeout=3600,
-                        poke_interval=30,
-                        date = date,
-                        stage = "3",      
-                    )
+            # Task 3: topocorrectref
+            topocorrectref = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s3',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s3',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "3",      
+            )
 
-                    # Task 4: Water index processing
-                    water_index_processing = SlurmJobHandlingSensor(
-                        task_id=f'i{i}_s4',
-                        ssh_conn_id='slurm_ssh_connection',
-                        script_name=f'sentt_{date}_s4',
-                        remote_path=remote_path,
-                        local_path=local_path, 
-                        #stage_script=script_stage_1,
-                        #dag=dag,
-                        timeout=3600,
-                        poke_interval=30,
-                        date = date,
-                        stage = "4",      
-                    )
+            # Task 4:incidencemask
+            incidencemask = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s4',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s4',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "4",      
+            )
 
-                    # Task 5: Fractional cover processing
-                    fractional_cover_processing = SlurmJobHandlingSensor(
-                        task_id=f'i{i}_s5',
-                        ssh_conn_id='slurm_ssh_connection',
-                        script_name=f'sentt_{date}_s5',
-                        remote_path=remote_path,
-                        local_path=local_path, 
-                        #stage_script=script_stage_1,
-                        #dag=dag,
-                        timeout=3600,
-                        poke_interval=30,
-                        date = date,
-                        stage = "5",      
-                    )
+            # Task 5: castshadowmask
+            castshadowmask = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s5',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s5',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "5",      
+            )
 
-                    # Task Dependency Setup
-                    cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
+            # Task 6: fpc_topocorrected
+            fpc_topocorrected = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s6',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s6',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "6",      
+            )
 
-                dynamic_task_group_node(date)
+            # Task 7: temperature
+            temperature = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s7',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s7',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "7",      
+            )
 
-    # Link the start task to the task group
-    download_files >> get_new_list >> process_date_group()
+            # Task 8: watermask_topocorrected
+            watermask_topocorrected = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s8',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s8',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "8",      
+            )
 
-dag_instance = daily_sentinel_batch_ingest_processing_dag()
+            # Task 9: surfacereflectance
+            surfacereflectance = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s9',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s9',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "9",      
+            )
 
+            # Task 10: ndvi
+            ndvi = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s10',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s10',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "10",      
+            )
 
+            # Task 11: fmaskcloud
+            fmaskcloud = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s11',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s11',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "11",      
+            )
+
+            # Task 12: fractionalcover_sfcref
+            fractionalcover_sfcref = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s12',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s12',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "12",      
+            )
+
+            # Task 13: binarywatermask
+            binarywatermask = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s13',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s13',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "13",      
+            )
+
+            # Task 14: waterindex_2015
+            waterindex_2015 = SlurmJobHandlingSensor(
+                task_id=f'i{i}_s14',
+                ssh_conn_id='slurm_ssh_connection',
+                script_name=f'{prefix}_s14',
+                remote_path=remote_path,
+                local_path=local_path, 
+                #stage_script=script_stage_1,
+                #dag=dag,
+                timeout=3600,
+                poke_interval=30,
+                date = date,
+                stage = "14",      
+            )
+
+            # Task Dependency Setup
+            get_list \
+                  >> make_incidence_angles >> toa_brdf_reflectance >> topocorrectref \
+                  >> incidencemask >> castshadowmask >> fpc_topocorrected \
+                  >> temperature >> watermask_topocorrected >> surfacereflectance \
+                  >> ndvi >> fmaskcloud >> fractionalcover_sfcref >> binarywatermask >> waterindex_2015
+
+dag_instance = daily_landsat_batch_processing_dag()
