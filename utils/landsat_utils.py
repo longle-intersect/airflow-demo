@@ -137,7 +137,8 @@ if [ -z "$fileda2" ]; then
     exit 1
 fi
 
-fileddb = ${{fileda3/da3/ddc}}
+fileddb = ${{fileda2/da2/ddc}}
+
 toposhadowmask.py --anglesImage $fileda2 --outImage $fileddb
 if [ $? -ne 0 ]; then
     echo "Failed at stage 5: castshadowmask.
@@ -164,8 +165,8 @@ fi
     elif stage == "7":
         script_stage =f"""
 # temperature
-converted_product="${date/re/th}"  # Replace 'l9olre' with 'l9olth'
-fileda1=$(ls ${converted_product}_da1*.img 2>/dev/null | head -n 1)
+converted_product="${{date/re/th}}"  # Replace 'l9olre' with 'l9olth'
+fileda1=$(ls ${{converted_product}}_da1*.img 2>/dev/null | head -n 1)
 
 # Check if files exist
 if [ -z "$fileda1" ]; then
@@ -173,8 +174,8 @@ if [ -z "$fileda1" ]; then
     exit 1
 fi
 
-filedbh_re = ${fileda1/da1/ddh}
-filedbh = ${filedbh_re/th/re}
+filedbh_re = ${{fileda1/da1/ddh}}
+filedbh = ${{filedbh_re/th/re}}
 
 landsattemperature.py -r $fileda1 -t $filedbh
 if [ $? -ne 0 ]; then
@@ -212,7 +213,7 @@ if [ -z "$fileda1" ] || [ -z "$fileda2" ] || [ -z "$fileda3" ]; then
     exit 1
 fi
 
-filedbg = ${fileda1/da1/dbg}
+filedbg = ${{fileda1/da1/dbg}}
 
 doRadiomCorrection.py --radiance $fileda1 --angles $fileda2 --incid $fileda3 --flattenedref $filedbg
 
@@ -244,8 +245,8 @@ fi
 # fmaskcloud
 fileda1=$(ls {date}_da1*.img 2>/dev/null | head -n 1)
 fileda2=$(ls {date}_da2*.img 2>/dev/null | head -n 1)
-converted_product="${date/re/th}"  # Replace 'l9olre' with 'l9olth'
-filedbh=$(ls ${converted_product}_dbh*.img 2>/dev/null | head -n 1)
+converted_product="${{date/re/th}}"  # Replace 'l9olre' with 'l9olth'
+filedbh=$(ls ${{converted_product}}_dbh*.img 2>/dev/null | head -n 1)
 
 # Check if files exist
 if [ -z "$fileda1" ] || [ -z "$fileda2" ] || [ -z "$filedbh" ]; then
@@ -271,7 +272,7 @@ if [ -z "$filedbg" ]; then
     exit 1
 fi
 
-filedil = ${filedbg/dbg/dil}
+filedil = ${{filedbg/dbg/dil}}
 
 compute_fractionalcover.py -i $filedbg -o $filedil
 
@@ -309,8 +310,8 @@ if [ -z "$filedbg" ]; then
     exit 1
 fi
 
-fileddi=${filedbg/dbg/ddi}
-fileddj=${filedbg/dbg/ddj}
+fileddi=${{filedbg/dbg/ddi}}
+fileddj=${{filedbg/dbg/ddj}}
 
 qv_water_index2015.py --outindex $fileddi --outmask $fileddj $filedbg --omitothermasks
 
