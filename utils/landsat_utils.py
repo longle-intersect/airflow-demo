@@ -117,7 +117,7 @@ if [ -z "$fileda3" ]; then
     exit 1
 fi
 
-fileddc=${fileda3/da3/ddc}
+fileddc=${{fileda3/da3/ddc}}
 
 incidencemask.py --incidfile $fileda3 --outfile $fileddc
 if [ $? -ne 0 ]; then
@@ -137,7 +137,7 @@ if [ -z "$fileda2" ]; then
     exit 1
 fi
 
-fileddb = ${fileda2/da2/ddb}
+fileddb = ${{fileda3/da3/ddc}}
 toposhadowmask.py --anglesImage $fileda2 --outImage $fileddb
 if [ $? -ne 0 ]; then
     echo "Failed at stage 5: castshadowmask.
