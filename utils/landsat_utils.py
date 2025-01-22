@@ -141,7 +141,7 @@ fileddb=${{fileda2/da2/ddb}}
 
 toposhadowmask.py --anglesImage $fileda2 --outImage $fileddb
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 5: castshadowmask.
+    echo "Failed at stage 5: castshadowmask."
 fi    
 """   
     ## STAGE 6            
