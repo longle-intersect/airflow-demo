@@ -158,7 +158,7 @@ fi
 
 qv_fpc_index.py --in $filedb8
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 6: fpc_topocorrected.
+    echo "Failed at stage 6: fpc_topocorrected."
 fi    
 """
     # STAGE 7
@@ -179,7 +179,7 @@ filedbh=${{filedbh_re/th/re}}
 
 landsattemperature.py -r $fileda1 -t $filedbh
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 7: temperature.
+    echo "Failed at stage 7: temperature."
 fi    
 """
     # STAGE 8
@@ -196,7 +196,7 @@ fi
 
 qv_water_index.py --toaref $filedb8
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 8: watermask_topocorrected.
+    echo "Failed at stage 8: watermask_topocorrected."
 fi    
 """        
     # STAGE 9
@@ -218,7 +218,7 @@ filedbg=${{fileda1/da1/dbg}}
 doRadiomCorrection.py --radiance $fileda1 --angles $fileda2 --incid $fileda3 --flattenedref $filedbg
 
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 9: surfacereflectance.
+    echo "Failed at stage 9: surfacereflectance."
 fi    
 """ 
     # STAGE 10
@@ -236,7 +236,7 @@ fi
 qv_landsatndvi.py -i $filedbg
 
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 10: ndvi.
+    echo "Failed at stage 10: ndvi."
 fi    
 """
     # STAGE 11
@@ -257,7 +257,7 @@ fi
 qv_landsatcloud_fmask.py --radiancefile $fileda1 --updatedatabase
 
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 11: fmaskcloud.
+    echo "Failed at stage 11: fmaskcloud."
 fi    
 """              
     # STAGE 12
@@ -277,7 +277,7 @@ filedil=${{filedbg/dbg/dil}}
 compute_fractionalcover.py -i $filedbg -o $filedil
 
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 12: fractionalcover_sfcref.
+    echo "Failed at stage 12: fractionalcover_sfcref."
 fi    
 """
     # STAGE 13
@@ -295,7 +295,7 @@ fi
 qv_binarywatermask.py --waterindex $filedd6
 
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 13: binarywatermask.
+    echo "Failed at stage 13: binarywatermask."
 fi    
 """
     # STAGE 14
@@ -316,7 +316,7 @@ fileddj=${{filedbg/dbg/ddj}}
 qv_water_index2015.py --outindex $fileddi --outmask $fileddj $filedbg --omitothermasks
 
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 14: waterindex_2015.
+    echo "Failed at stage 14: waterindex_2015."
 fi    
 """           
     return script_stage
