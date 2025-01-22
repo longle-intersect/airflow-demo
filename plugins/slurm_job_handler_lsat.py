@@ -6,7 +6,6 @@ sys.path.insert(0, '/opt/airflow/dags/repo/utils')
 from airflow.providers.ssh.hooks.ssh import SSHHook
 from airflow.sensors.base_sensor_operator import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
-from sentinel_utils import *
 from landsat_utils import *
 from airflow.exceptions import AirflowException
 #local_path = '/home/airflow/slurm_scripts/'
@@ -20,7 +19,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
         super(SlurmJobHandlingSensor, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
         #self.script_id = script_name
-        self.script_id = f'sentt_{date}'
+        self.script_id = f'lsat_{date}'
         self.script_name = self.script_id + "_s" + stage + ".slurm"
         self.remote_path = remote_path
         self.local_path = local_path

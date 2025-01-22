@@ -8,7 +8,7 @@ from airflow.providers.ssh.operators.ssh import SSHOperator
 from datetime import datetime, timedelta
 from airflow.utils.dates import days_ago
 from airflow.operators.python import PythonOperator
-from slurm_job_handler_new import SlurmJobHandlingSensor
+from slurm_job_handler_lsat import SlurmJobHandlingSensor
 from airflow.utils.task_group import TaskGroup
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
