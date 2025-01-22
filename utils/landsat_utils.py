@@ -137,7 +137,7 @@ if [ -z "$fileda2" ]; then
     exit 1
 fi
 
-fileddb = ${{fileda2/da2/ddb}}
+fileddb=${{fileda2/da2/ddb}}
 
 toposhadowmask.py --anglesImage $fileda2 --outImage $fileddb
 if [ $? -ne 0 ]; then
@@ -174,8 +174,8 @@ if [ -z "$fileda1" ]; then
     exit 1
 fi
 
-filedbh_re = ${{fileda1/da1/ddh}}
-filedbh = ${{filedbh_re/th/re}}
+filedbh_re=${{fileda1/da1/ddh}}
+filedbh=${{filedbh_re/th/re}}
 
 landsattemperature.py -r $fileda1 -t $filedbh
 if [ $? -ne 0 ]; then
@@ -213,7 +213,7 @@ if [ -z "$fileda1" ] || [ -z "$fileda2" ] || [ -z "$fileda3" ]; then
     exit 1
 fi
 
-filedbg = ${{fileda1/da1/dbg}}
+filedbg=${{fileda1/da1/dbg}}
 
 doRadiomCorrection.py --radiance $fileda1 --angles $fileda2 --incid $fileda3 --flattenedref $filedbg
 
@@ -272,7 +272,7 @@ if [ -z "$filedbg" ]; then
     exit 1
 fi
 
-filedil = ${{filedbg/dbg/dil}}
+filedil=${{filedbg/dbg/dil}}
 
 compute_fractionalcover.py -i $filedbg -o $filedil
 
