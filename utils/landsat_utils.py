@@ -23,6 +23,7 @@ fi
 
 # Load necessary modules
 module load satimport usgslandsat autoslats overnightbatch aarnet maint_tools jrsrp-landsat
+module load brdf drr irs-atmos groundcover cloud fractionalcover
 if [ $? -ne 0 ]; then
     echo "Failed to load modules."
     exit 1
