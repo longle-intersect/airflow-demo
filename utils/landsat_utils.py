@@ -293,7 +293,7 @@ if [ -z "$filedd6" ]; then
     exit 1
 fi
 
-qv_binarywatermask.py --waterindex $filedd6
+qv_binarywatermask.py --waterindex $filedd6 --omitothermasks
 
 if [ $? -ne 0 ]; then
     echo "Failed at stage 13: binarywatermask."
