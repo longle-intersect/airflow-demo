@@ -58,12 +58,12 @@ default_args = {
 }
 
 
-@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_4',
+@dag(dag_id='sdc_landsat_batch_ingest_update_daily',
      default_args=default_args,
-     description='Daily Ingest and Update Sentinel-2 Imagery using TaskGroup 4 on SDC',
+     description='Daily Ingest and Update Landsat Imagery using TaskGroup on SDC',
      schedule_interval=None,
      start_date=days_ago(1),
-     tags=['sdc', 'sentinel'])
+     tags=['sdc', 'landsat'])
 def daily_sentinel_batch_ingest_processing_dag():
     # get_list = PythonOperator(task_id="get_img_list",
     #                           python_callable=get_dates,

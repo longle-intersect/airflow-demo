@@ -45,6 +45,7 @@ cd $FILESTORE_PATH/tmp_data/landsat
 
 def generate_script_stage(date, stage):
 
+    ## STAGE 1
     if stage == "1":
         script_stage = f"""
 # Execute incidence processing
@@ -63,6 +64,7 @@ if [ $? -ne 0 ]; then
 fi
 """    
 # {date}_ab0m5.img
+    ## STAGE 2
     elif stage == "2":
         script_stage = f"""
 # toa_brdf_reflectance
@@ -82,6 +84,7 @@ if [ $? -ne 0 ]; then
 fi
 """
 # {date}_ab0m5.img
+    ## STAGE 3
     elif stage == "3":
         script_stage = f"""
 # topocorrectref
@@ -102,7 +105,7 @@ if [ $? -ne 0 ]; then
 fi
 
 """
-# 
+    ## STAGE 4
     elif stage == "4":
         script_stage = f"""
 # incidencemask
@@ -121,23 +124,199 @@ if [ $? -ne 0 ]; then
     echo "Failed at stage 4: incidencemask."
     exit 1
 fi    
-"""        
+"""  
+    ## STAGE 5
     elif stage == "5":
+        script_stage =f"""
+# castshadowmask
+fileda2=$(ls {date}_da2*.img 2>/dev/null | head -n 1)
+
+# Check if files exist
+if [ -z "$fileda2" ]; then
+    echo "Failed at stage 5: Required input files not found."
+    exit 1
+fi
+
+fileddb = ${fileda2/da2/ddb}
+toposhadowmask.py --anglesImage $fileda2 --outImage $fileddb
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 5: castshadowmask.
+fi    
+"""   
+    ## STAGE 6            
+    elif stage == "6":
         script_stage =f"""
 # fpc_topocorrected
 filedb8=$(ls {date}_db8*.img 2>/dev/null | head -n 1)
 
 # Check if files exist
 if [ -z "$filedb8" ]; then
-    echo "Failed at stage 5: Required input files not found."
+    echo "Failed at stage 6: Required input files not found."
     exit 1
 fi
 
 qv_fpc_index.py --in $filedb8
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 5: fpc_topocorrected.
+    echo "Failed at stage 6: fpc_topocorrected.
 fi    
 """
-,
+    # STAGE 7
+    elif stage == "7":
+        script_stage =f"""
+# temperature
+converted_product="${date/re/th}"  # Replace 'l9olre' with 'l9olth'
+fileda1=$(ls ${converted_product}_da1*.img 2>/dev/null | head -n 1)
+
+# Check if files exist
+if [ -z "$fileda1" ]; then
+    echo "Failed at stage 7: Required input files not found."
+    exit 1
+fi
+
+filedbh_re = ${fileda1/da1/ddh}
+filedbh = ${filedbh_re/th/re}
+
+landsattemperature.py -r $fileda1 -t $filedbh
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 7: temperature.
+fi    
+"""
+    # STAGE 8
+    elif stage == "8":
+        script_stage =f"""
+# watermask_topocorrected
+filedb8=$(ls {date}_db8*.img 2>/dev/null | head -n 1)
+
+# Check if files exist
+if [ -z "$filedb8" ]; then
+    echo "Failed at stage 8: Required input files not found."
+    exit 1
+fi
+
+qv_water_index.py --toaref $filedb8
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 8: watermask_topocorrected.
+fi    
+"""        
+    # STAGE 9
+    elif stage == "9":
+        script_stage =f"""
+# surfacereflectance
+fileda1=$(ls {date}_da1*.img 2>/dev/null | head -n 1)
+fileda2=$(ls {date}_da2*.img 2>/dev/null | head -n 1)
+fileda3=$(ls {date}_da3*.img 2>/dev/null | head -n 1)
+
+# Check if files exist
+if [ -z "$fileda1" ] || [ -z "$fileda2" ] || [ -z "$fileda3" ]; then
+    echo "Failed at stage 9: Required input files not found."
+    exit 1
+fi
+
+filedbg = ${fileda1/da1/dbg}
+
+doRadiomCorrection.py --radiance $fileda1 --angles $fileda2 --incid $fileda3 --flattenedref $filedbg
+
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 9: surfacereflectance.
+fi    
+""" 
+    # STAGE 10
+    elif stage == "10":
+        script_stage =f"""
+# ndvi
+filedbg=$(ls {date}_dbg*.img 2>/dev/null | head -n 1)
+
+# Check if files exist
+if [ -z "$filedbg" ]; then
+    echo "Failed at stage 10: Required input files not found."
+    exit 1
+fi
+
+qv_landsatndvi.py -i $filedbg
+
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 10: ndvi.
+fi    
+"""
+    # STAGE 11
+    elif stage == "11":
+        script_stage =f"""
+# fmaskcloud
+fileda1=$(ls {date}_da1*.img 2>/dev/null | head -n 1)
+fileda2=$(ls {date}_da2*.img 2>/dev/null | head -n 1)
+converted_product="${date/re/th}"  # Replace 'l9olre' with 'l9olth'
+filedbh=$(ls ${converted_product}_dbh*.img 2>/dev/null | head -n 1)
+
+# Check if files exist
+if [ -z "$fileda1" ] || [ -z "$fileda2" ] || [ -z "$filedbh" ]; then
+    echo "Failed at stage 11: Required input files not found."
+    exit 1
+fi
+
+qv_landsatcloud_fmask.py --radiancefile $fileda1 --updatedatabase
+
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 11: fmaskcloud.
+fi    
+"""              
+    # STAGE 12
+    elif stage == "12":
+        script_stage =f"""
+# fractionalcover_sfcref
+filedbg=$(ls {date}_dbg*.img 2>/dev/null | head -n 1)
+
+# Check if files exist
+if [ -z "$filedbg" ]; then
+    echo "Failed at stage 12: Required input files not found."
+    exit 1
+fi
+
+filedil = ${filedbg/dbg/dil}
+
+compute_fractionalcover.py -i $filedbg -o $filedil
+
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 12: fractionalcover_sfcref.
+fi    
+"""
+    # STAGE 13
+    elif stage == "13":
+        script_stage =f"""
+# binarywatermask
+filedd6=$(ls {date}_dd6*.img 2>/dev/null | head -n 1)
+
+# Check if files exist
+if [ -z "$filedd6" ]; then
+    echo "Failed at stage 13: Required input files not found."
+    exit 1
+fi
+
+qv_binarywatermask.py --waterindex $filedd6
+
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 13: binarywatermask.
+fi    
+"""
+    # STAGE 14
+    elif stage == "14":
+        script_stage =f"""
+# waterindex_2015
+filedbg=$(ls {date}_dbg*.img 2>/dev/null | head -n 1)
+
+# Check if files exist
+if [ -z "$filedbg" ]; then
+    echo "Failed at stage 14: Required input files not found."
+    exit 1
+fi
+
+fileddi=${filedbg/dbg/ddi}
+fileddj=${filedbg/dbg/ddj}
+
+qv_water_index2015.py --outindex $fileddi --outmask $fileddj $filedbg --omitothermasks
+
+if [ $? -ne 0 ]; then
+    echo "Failed at stage 14: waterindex_2015.
+fi    
+"""           
     return script_stage
 
