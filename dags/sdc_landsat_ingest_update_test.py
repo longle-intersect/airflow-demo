@@ -27,7 +27,7 @@ default_args = {
 }
 
 
-@dag(dag_id='sdc_landsat_batch_update_daily_taskgroup',
+@dag(dag_id='sdc_landsat_batch_daily_taskgroup',
      default_args=default_args,
      description='Daily Update Landsat Imagery TaskGroup on SDC',
      schedule_interval=None,
@@ -35,9 +35,9 @@ default_args = {
      tags=['sdc', 'landsat'])
 def daily_landsat_batch_processing_dag():
 
-    dates = ["l9olre_p089r079_20250114",
+    dates = [#"l9olre_p089r079_20250114",
              "l9olre_p089r084_20250114",
-             "l9olre_p089r085_20250114"
+             #"l9olre_p089r085_20250114"
             ]  # Assuming these dates are dynamically determined elsewhere
 
     # get_list = PythonOperator(task_id="get_img_list",
