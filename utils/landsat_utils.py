@@ -137,7 +137,7 @@ if [ -z "$fileda2" ]; then
     exit 1
 fi
 
-fileddb = ${{fileda2/da2/ddc}}
+fileddb = ${{fileda2/da2/ddb}}
 
 toposhadowmask.py --anglesImage $fileda2 --outImage $fileddb
 if [ $? -ne 0 ]; then
