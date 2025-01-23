@@ -99,14 +99,14 @@ def daily_landsat_ingest_batch_dag():
         python_callable=parse_file_list,
     )
 
-    @task_group(group_id='batch_processing')
+    @task_group(group_id='lsat_batch_processing')
     def process_date_group():
         mapped_args = Variable.get("new_landsat_list", default_var=[], deserialize_json=True)
 
         # Expand the dynamic task group only if mapped_args is not empty
         if mapped_args:
             for i, date in enumerate(mapped_args):
-                @task_group(group_id=f"process_img_{i}")
+                @task_group(group_id=f"lsat_img_{i}")
                 def dynamic_task_group_node(date):
                     prefix = f"lsat_{date}"
                 #with TaskGroup(group_id=f'process_img_{i}') as tg:
