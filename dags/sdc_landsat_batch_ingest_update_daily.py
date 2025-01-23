@@ -82,6 +82,7 @@ def daily_landsat_ingest_batch_dag():
         ssh_conn_id='slurm_ssh_connection',
         command="""
         module load sdc_testing;
+        module load usgslandsat autoslats overnightbatch jrsrp-landsat;
         export NEWIMAGES=newimages.json;
         export USGSLANDSAT_IMPORT_CMD="module load jrsrp-landsat; qv_importusgslandsat_c2.py --tarfile";
         export SINGULARITY_BINDPATH="/mnt,/srv,/var/run/munge,/var/run/nscd";
