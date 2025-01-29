@@ -54,7 +54,7 @@ fileda2=$(ls {date}_da2*.img 2>/dev/null | head -n 1)
 
 # Check if file exist
 if [ -z "$fileda2" ]; then
-    echo "Failed at stage 4: Required input files not found."
+    echo "Failed at stage 1: Required input files not found."
     exit 1
 fi
 
@@ -101,7 +101,7 @@ fi
 
 topocorrect.py --reffile $filedb3 --limitovercorrection
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 2: topocorrectref."
+    echo "Failed at stage 3: topocorrectref."
     exit 1
 fi
 
