@@ -34,9 +34,14 @@ from metadata.generated.schema.security.client.openMetadataJWTClientConfig impor
 )
 
 
+# DAG Configuration
 default_args = {
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 0,
+    'retry_delay': timedelta(minutes=2),
 }
 
 
@@ -49,7 +54,7 @@ with DAG(
     default_args=default_args,
     description='A simple tutorial DAG',
     schedule_interval=timedelta(days=1),
-    start_date=datetime(2021, 1, 1),
+    start_date=datetime(2025, 1, 29),
     catchup=False,
     tags=['example'],
 ) as dag:
