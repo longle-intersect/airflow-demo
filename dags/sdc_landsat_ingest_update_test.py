@@ -13,7 +13,7 @@ from airflow.utils.task_group import TaskGroup
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 remote_path='/home/lelong/log_airflow_slurm/scripts/'
-local_path='/home/airflow/slurm_scripts/' 
+local_path='/opt/airflow/slurm_scripts/' 
 
 # DAG Configuration
 default_args = {

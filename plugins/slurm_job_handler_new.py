@@ -2,7 +2,7 @@ import time
 import os
 import sys
 import logging
-#sys.path.insert(0, '/opt/airflow/dags/repo/utils')
+sys.path.insert(0, '/opt/airflow/dags/repo/utils')
 sys.path.insert(0, '/opt/airflow/utils')
 from airflow.providers.ssh.hooks.ssh import SSHHook
 from airflow.sensors.base_sensor_operator import BaseSensorOperator
