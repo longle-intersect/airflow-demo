@@ -1,0 +1,7 @@
+Faker==33.1.0
+python-dateutil==2.9.0.post0
+setuptools==75.1.0
+six==1.17.0
+typing_extensions==4.12.2
+wheel==0.44.0
+openmetadata-ingestion==1.5.13

@@ -2,14 +2,24 @@ import time
 import os
 import sys
 import logging
-sys.path.insert(0, '/opt/airflow/dags/repo/utils')
+#sys.path.insert(0, '/opt/airflow/dags/repo/utils')
+sys.path.insert(0, '/opt/airflow/utils')
 from airflow.providers.ssh.hooks.ssh import SSHHook
 from airflow.sensors.base_sensor_operator import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
 from sentinel_utils import *
-from landsat_utils import *
+#from utils.landsat_utils import *
 from airflow.exceptions import AirflowException
+from airflow.plugins_manager import AirflowPlugin
 #local_path = '/home/airflow/slurm_scripts/'
+
+logger = logging.getLogger(__file__)
+
+SLURM_POKE_GRACE_PERIOD_SECONDS = 60
+"""The interval where the sensor will not query the queue.
+This is useful if in poke mode, where poking slurm or other queue occurs before
+the job is registered in the queue.
+"""
 
 class SlurmJobHandlingSensor(BaseSensorOperator):
     template_fields = ('date', 'processing_stage')
@@ -17,6 +27,12 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
     @apply_defaults
     def __init__(self, ssh_conn_id, script_name, remote_path, local_path,
                  date, stage, *args, **kwargs):
+        """
+        This operator plugin submits a job scheduler job and periodically (and
+        asynchronously) checks whether the job has completed or failed.
+        If a failure of any kind occurs (such as a timeout) then the job is
+        removed from the queue.
+        """        
         super(SlurmJobHandlingSensor, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
         #self.script_id = script_name
@@ -130,3 +146,13 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             self.log.info(f"Output and error files retrieved: {local_output_path}, {local_error_path}")
 
             return output_content, error_content
+
+class AirflowJobSchedulerPlugin(AirflowPlugin):
+    name = 'slurm_job_handler_sentinel'
+    operators = [SlurmJobHandlingSensor]
+    hooks = []
+    executors = []
+    macros = []
+    admin_views = []
+    flask_blueprint = []
+    menu_links = []

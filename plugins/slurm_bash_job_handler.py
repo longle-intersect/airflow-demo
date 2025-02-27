@@ -6,7 +6,7 @@ sys.path.insert(0, '/opt/airflow/dags/repo/utils')
 from airflow.providers.ssh.hooks.ssh import SSHHook
 from airflow.sensors.base_sensor_operator import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
-from sentinel_utils import *
+from utils.sentinel_utils import *
 #local_path = '/home/airflow/slurm_scripts/'
 
 class SlurmJobHandlingSensor(BaseSensorOperator):

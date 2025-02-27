@@ -1,6 +1,7 @@
 import sys
 import logging
 sys.path.insert(0, '/opt/airflow/dags/repo/plugins')
+sys.path.insert(0, '/opt/airflow/')
 import re
 from airflow import DAG
 from airflow.decorators import dag, task, task_group
@@ -9,7 +10,7 @@ from airflow.providers.ssh.operators.ssh import SSHOperator
 from datetime import datetime, timedelta
 from airflow.utils.dates import days_ago
 from airflow.operators.python import PythonOperator
-from slurm_job_handler_new import SlurmJobHandlingSensor
+from plugins.slurm_job_handler_new import SlurmJobHandlingSensor
 from airflow.utils.task_group import TaskGroup
 from airflow.models.baseoperator import chain
 from airflow.models import XCom, Variable
@@ -17,7 +18,7 @@ import base64
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 remote_path='/home/lelong/log_airflow_slurm/scripts/'
-local_path='/home/airflow/slurm_scripts/' 
+local_path='/opt/airflow/slurm_scripts/' 
 
 # Function to parse the output and extract file names
 
@@ -38,6 +39,8 @@ def parse_file_list(ti):
                 processed_list.append("cemsre_" + extracted)
             elif filename.startswith("S2B"):
                 processed_list.append("cfmsre_" + extracted)
+            elif filename.startswith("S2C"):
+                processed_list.append("cgmsre_" + extracted)
             else:
                 processed_list.append(extracted)
 

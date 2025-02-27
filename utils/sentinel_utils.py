@@ -47,10 +47,18 @@ def generate_script_stage(date, stage):
 
     if stage == "1":
         script_stage = f"""
+# Input ab0, ab1, ab2
+# Output ad2, ad3, ad4
 # Execute cloud fmask processing
-fileab=$(ls {date}_ab0*.img 2>/dev/null | head -n 1)
+fileab0=$(ls {date}_ab0*.img 2>/dev/null | head -n 1)
 
-qv_sentinel2cloud_fmask.py --toaref10 $fileab
+# Check if file exist
+if [ -z "$fileab0" ]; then
+    echo "Failed at stage 1: Required input files not found."
+    exit 1
+fi
+
+qv_sentinel2cloud_fmask.py --toaref10 $fileab0
 if [ $? -ne 0 ]; then
     echo "Failed at stage 1: Cloud fmask processing."
     exit 1
@@ -59,6 +67,8 @@ fi
 # {date}_ab0m5.img
     elif stage == "2":
         script_stage = f"""
+# Input ab0
+# Output ad0, ad1
 for file in {date}_ab0*.img; do
     qv_sentinel2topomasks.py --toaref10 $file
     if [ $? -ne 0 ]; then
@@ -70,6 +80,8 @@ done
 # {date}_ab0m5.img
     elif stage == "3":
         script_stage = f"""
+# Input ab0, ab1
+# Output aba, abb
 for file in {date}_ab0*.img; do
     doSfcRefSentinel2.py --toaref $file
     if [ $? -ne 0 ]; then
@@ -81,6 +93,8 @@ done
 # 
     elif stage == "4":
         script_stage = f"""
+# Input aba, abb
+# Output ad5, ad6
 # Find files matching the patterns
 fileaba=$(ls {date}_aba*.img 2>/dev/null | head -n 1)
 fileabb=$(ls {date}_abb*.img 2>/dev/null | head -n 1)
@@ -99,10 +113,12 @@ fi
 """        
     elif stage == "5":
         script_stage =f"""
+# Input aba, abb
+# Output ac0
 fileaba=$(ls {date}_aba*.img 2>/dev/null | head -n 1)
 qv_fractionalcover_sentinel2.py "$fileaba"
 if [ $? -ne 0 ]; then
-    echo "Failed at stage 5: Fractional cover processing."
+    echo "Failed at stage 5: Fractional coverocessing."
     exit 1
 fi    
 """

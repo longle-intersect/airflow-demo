@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+id_rsa
+dags/3ai_dags
+logs/
