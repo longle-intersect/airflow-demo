@@ -19,15 +19,20 @@ with DAG(
     dag_id="test_secure_dtn_access",
     default_args=default_args,
     description="A simple DAG to test secure SSH connection and submit a SLURM job",
-    schedule_interval=None,
+    schedule_interval='*/5 * * * *',
     start_date=datetime(2025, 3, 6),
     catchup=False,
     tags=["ssh", "example"],
     params={
         "key_file": Param(
-            "/opt/airflow/.ssh/id_rsa_long",
+            " ",
             type="string",
             description="Path to the SSH key file."
+        ),
+        "command": Param(
+            'echo "Run command successfully!"',
+            type="string",
+            escription="Command to run in DTN Host."
         )
     },
 ) as dag:
@@ -54,7 +59,7 @@ with DAG(
         ssh_op = SSHOperator(
             task_id='ssh_download_job',
             ssh_hook=ssh_hook,
-            command='sbatch /home/lelong/job_script/sample_slurm.slurm',
+            command=params["command"],
             do_xcom_push=True
         )
         result = ssh_op.execute(None)
