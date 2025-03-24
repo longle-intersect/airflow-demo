@@ -64,7 +64,7 @@ def searching(**context):
 
         # Define the command
         command = (
-            'cd $FILESTORE_PATH/download/test &&'
+            'cd /mnt/scratch_lustre/tmp/rs_testing/download/test &&'
             'python ~/workspace/updateSentinel_fromSara.py --task search --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"'
  
         )
@@ -241,16 +241,16 @@ def daily_sentinel_batch_AARNet_processing_dag():
         #dag=dag,
     )
 
-    # download_files = SSHOperator(
-    #     task_id='download_files',
-    #     ssh_conn_id= 'aarnet_ssh_connection',
-    #     command="""
-    #     curl -n -L -O -J --silent --show-error "{{ ti.xcom_pull(task_ids='search_new_files', key='url_list') }}"
-    #     """,
-    #     conn_timeout=3600,
-    #     cmd_timeout=3600,
-    #     do_xcom_push=True  # Pushes the command output to XCom
-    # )
+    download_files = SSHOperator(
+        task_id='download_files',
+        ssh_conn_id= 'aarnet_ssh_connection',
+        command="""
+        curl -n -L -O -J --silent --show-error "{{ ti.xcom_pull(task_ids='search_new_files', key='url_list') }}"
+        """,
+        conn_timeout=3600,
+        cmd_timeout=3600,
+        do_xcom_push=True  # Pushes the command output to XCom
+    )
 
     # import_files = PythonOperator(
     #     task_id='import_files',
@@ -359,7 +359,7 @@ def daily_sentinel_batch_AARNet_processing_dag():
     # # Link the start task to the task group
     # download_files >> get_new_list >> process_date_group()
     
-    search_files
+    search_files >> download_files
 
 dag_instance = daily_sentinel_batch_AARNet_processing_dag()
 
