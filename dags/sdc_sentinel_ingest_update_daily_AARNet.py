@@ -93,7 +93,7 @@ def searching(**context):
         url_file = None
         for line in lines:
             if line.startswith('XCOM_URL_LIST:'):
-                url_list = int(line.replace('XCOM_URL_LIST:', '').strip())
+                url_list = line.replace('XCOM_URL_LIST:', '').strip()
             elif line.startswith('XCOM_URL_FILE:'):
                 url_file = line.replace('XCOM_URL_FILE:', '').strip()
  
