@@ -28,30 +28,30 @@ local_path='/opt/airflow/slurm_script/'
 # Function to parse the output and extract file names
 
 # Function to extract the tile identifier and date from filenames
-def parse_file_list(ti):
-    file_list = ti.xcom_pull(task_ids='download_files')
-    decoded_list = base64.b64decode(file_list).decode()
-    print(decoded_list)
-    pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
-    processed_list = []
-    for filename in eval(decoded_list):
-        # Extract the tile identifier and date
-        match = pattern.search(filename)
-        if match:
-            extracted = match.group(0).lower()
-            # Prepend based on the prefix
-            if filename.startswith("S2A"):
-                processed_list.append("cemsre_" + extracted)
-            elif filename.startswith("S2B"):
-                processed_list.append("cfmsre_" + extracted)
-            elif filename.startswith("S2C"):
-                processed_list.append("cgmsre_" + extracted)
-            else:
-                processed_list.append(extracted)
+# def parse_file_list(ti):
+#     file_list = ti.xcom_pull(task_ids='download_files')
+#     decoded_list = base64.b64decode(file_list).decode()
+#     print(decoded_list)
+#     pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
+#     processed_list = []
+#     for filename in eval(decoded_list):
+#         # Extract the tile identifier and date
+#         match = pattern.search(filename)
+#         if match:
+#             extracted = match.group(0).lower()
+#             # Prepend based on the prefix
+#             if filename.startswith("S2A"):
+#                 processed_list.append("cemsre_" + extracted)
+#             elif filename.startswith("S2B"):
+#                 processed_list.append("cfmsre_" + extracted)
+#             elif filename.startswith("S2C"):
+#                 processed_list.append("cgmsre_" + extracted)
+#             else:
+#                 processed_list.append(extracted)
 
-    print(processed_list)
-    Variable.set("new_list", processed_list, serialize_json=True)
-    return processed_list
+#     print(processed_list)
+#     Variable.set("new_list", processed_list, serialize_json=True)
+#     return processed_list
 
 # Function to execute SSH command and parse output
 def searching(**context):
@@ -241,124 +241,124 @@ def daily_sentinel_batch_AARNet_processing_dag():
         dag=dag,
     )
 
-    download_files = SSHOperator(
-        task_id='download_files',
-        ssh_conn_id= 'aarnet_ssh_connection',
-        command="""
-        curl -n -L -O -J --silent --show-error "{{ ti.xcom_pull(task_ids='search_new_files', key='url_list') }}"
-        """,
-        conn_timeout=3600,
-        cmd_timeout=3600,
-        do_xcom_push=True  # Pushes the command output to XCom
-    )
+    # download_files = SSHOperator(
+    #     task_id='download_files',
+    #     ssh_conn_id= 'aarnet_ssh_connection',
+    #     command="""
+    #     curl -n -L -O -J --silent --show-error "{{ ti.xcom_pull(task_ids='search_new_files', key='url_list') }}"
+    #     """,
+    #     conn_timeout=3600,
+    #     cmd_timeout=3600,
+    #     do_xcom_push=True  # Pushes the command output to XCom
+    # )
 
-    import_files = PythonOperator(
-        task_id='import_files',
-        python_callable=importing,
-        provide_context=True,
-        dag=dag,
-    )
-    """
-    get_new_list = PythonOperator(
-        task_id="get_new_list",
-        python_callable=parse_file_list,
-    )
+    # import_files = PythonOperator(
+    #     task_id='import_files',
+    #     python_callable=importing,
+    #     provide_context=True,
+    #     dag=dag,
+    # )
+    
+    # get_new_list = PythonOperator(
+    #     task_id="get_new_list",
+    #     python_callable=parse_file_list,
+    # )
 
-    @task_group(group_id='batch_processing')
-    def process_date_group():
-        mapped_args = Variable.get("new_list", default_var=[], deserialize_json=True)
+    # @task_group(group_id='batch_processing')
+    # def process_date_group():
+    #     mapped_args = Variable.get("new_list", default_var=[], deserialize_json=True)
 
-        # Expand the dynamic task group only if mapped_args is not empty
-        if mapped_args:
-            for i, date in enumerate(mapped_args):
-                @task_group(group_id=f"process_img_{i}")
-                def dynamic_task_group_node(date):
-                    # Create a custom task for each mapped argument
+    #     # Expand the dynamic task group only if mapped_args is not empty
+    #     if mapped_args:
+    #         for i, date in enumerate(mapped_args):
+    #             @task_group(group_id=f"process_img_{i}")
+    #             def dynamic_task_group_node(date):
+    #                 # Create a custom task for each mapped argument
                     
-                    # Task 1: Cloud fmask processing
-                    cloud_fmask_processing = SlurmJobHandlingSensor(
-                        task_id=f'i{i}_s1',
-                        ssh_conn_id='slurm_ssh_connection',
-                        script_name=f'sentt_{date}_s1',
-                        remote_path=remote_path,
-                        local_path=local_path, 
-                        #stage_script=script_stage_1,
-                        #dag=dag,
-                        timeout=3600,
-                        poke_interval=30,
-                        date = date,
-                        stage = "1"
-                    )
+    #                 # Task 1: Cloud fmask processing
+    #                 cloud_fmask_processing = SlurmJobHandlingSensor(
+    #                     task_id=f'i{i}_s1',
+    #                     ssh_conn_id='slurm_ssh_connection',
+    #                     script_name=f'sentt_{date}_s1',
+    #                     remote_path=remote_path,
+    #                     local_path=local_path, 
+    #                     #stage_script=script_stage_1,
+    #                     #dag=dag,
+    #                     timeout=3600,
+    #                     poke_interval=30,
+    #                     date = date,
+    #                     stage = "1"
+    #                 )
 
-                    # Task 2: Topo masks processing
-                    topo_masks_processing = SlurmJobHandlingSensor(
-                        task_id=f'i{i}_s2',
-                        ssh_conn_id='slurm_ssh_connection',
-                        script_name=f'sentt_{date}_s2',
-                        remote_path=remote_path,
-                        local_path=local_path, 
-                        #stage_script=script_stage_1,
-                        #dag=dag,
-                        timeout=3600,
-                        poke_interval=30,
-                        date = date,
-                        stage = "2",       
-                    )
+    #                 # Task 2: Topo masks processing
+    #                 topo_masks_processing = SlurmJobHandlingSensor(
+    #                     task_id=f'i{i}_s2',
+    #                     ssh_conn_id='slurm_ssh_connection',
+    #                     script_name=f'sentt_{date}_s2',
+    #                     remote_path=remote_path,
+    #                     local_path=local_path, 
+    #                     #stage_script=script_stage_1,
+    #                     #dag=dag,
+    #                     timeout=3600,
+    #                     poke_interval=30,
+    #                     date = date,
+    #                     stage = "2",       
+    #                 )
 
 
-                    # Task 3: Surface reflectance processing
-                    surface_reflectance_processing = SlurmJobHandlingSensor(
-                        task_id=f'i{i}_s3',
-                        ssh_conn_id='slurm_ssh_connection',
-                        script_name=f'sentt_{date}_s3',
-                        remote_path=remote_path,
-                        local_path=local_path, 
-                        #stage_script=script_stage_1,
-                        #dag=dag,
-                        timeout=3600,
-                        poke_interval=30,
-                        date = date,
-                        stage = "3",      
-                    )
+    #                 # Task 3: Surface reflectance processing
+    #                 surface_reflectance_processing = SlurmJobHandlingSensor(
+    #                     task_id=f'i{i}_s3',
+    #                     ssh_conn_id='slurm_ssh_connection',
+    #                     script_name=f'sentt_{date}_s3',
+    #                     remote_path=remote_path,
+    #                     local_path=local_path, 
+    #                     #stage_script=script_stage_1,
+    #                     #dag=dag,
+    #                     timeout=3600,
+    #                     poke_interval=30,
+    #                     date = date,
+    #                     stage = "3",      
+    #                 )
 
-                    # Task 4: Water index processing
-                    water_index_processing = SlurmJobHandlingSensor(
-                        task_id=f'i{i}_s4',
-                        ssh_conn_id='slurm_ssh_connection',
-                        script_name=f'sentt_{date}_s4',
-                        remote_path=remote_path,
-                        local_path=local_path, 
-                        #stage_script=script_stage_1,
-                        #dag=dag,
-                        timeout=3600,
-                        poke_interval=30,
-                        date = date,
-                        stage = "4",      
-                    )
+    #                 # Task 4: Water index processing
+    #                 water_index_processing = SlurmJobHandlingSensor(
+    #                     task_id=f'i{i}_s4',
+    #                     ssh_conn_id='slurm_ssh_connection',
+    #                     script_name=f'sentt_{date}_s4',
+    #                     remote_path=remote_path,
+    #                     local_path=local_path, 
+    #                     #stage_script=script_stage_1,
+    #                     #dag=dag,
+    #                     timeout=3600,
+    #                     poke_interval=30,
+    #                     date = date,
+    #                     stage = "4",      
+    #                 )
 
-                    # Task 5: Fractional cover processing
-                    fractional_cover_processing = SlurmJobHandlingSensor(
-                        task_id=f'i{i}_s5',
-                        ssh_conn_id='slurm_ssh_connection',
-                        script_name=f'sentt_{date}_s5',
-                        remote_path=remote_path,
-                        local_path=local_path, 
-                        #stage_script=script_stage_1,
-                        #dag=dag,
-                        timeout=3600,
-                        poke_interval=30,
-                        date = date,
-                        stage = "5",      
-                    )
+    #                 # Task 5: Fractional cover processing
+    #                 fractional_cover_processing = SlurmJobHandlingSensor(
+    #                     task_id=f'i{i}_s5',
+    #                     ssh_conn_id='slurm_ssh_connection',
+    #                     script_name=f'sentt_{date}_s5',
+    #                     remote_path=remote_path,
+    #                     local_path=local_path, 
+    #                     #stage_script=script_stage_1,
+    #                     #dag=dag,
+    #                     timeout=3600,
+    #                     poke_interval=30,
+    #                     date = date,
+    #                     stage = "5",      
+    #                 )
 
-                    # Task Dependency Setup
-                    cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
+    #                 # Task Dependency Setup
+    #                 cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
 
-                dynamic_task_group_node(date)
+    #             dynamic_task_group_node(date)
 
-    # Link the start task to the task group
-    download_files >> get_new_list >> process_date_group()
-    """
+    # # Link the start task to the task group
+    # download_files >> get_new_list >> process_date_group()
+    
     search_files
 
 dag_instance = daily_sentinel_batch_AARNet_processing_dag()
