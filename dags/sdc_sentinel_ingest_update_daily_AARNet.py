@@ -215,7 +215,7 @@ default_args = {
      schedule_interval=None,
      start_date=days_ago(1),
      tags=['sdc', 'sentinel', 'daily'])
-def daily_sentinel_batch_ingest_processing_dag():
+def daily_sentinel_batch_AARNet_processing_dag():
     # get_list = PythonOperator(task_id="get_img_list",
     #                           python_callable=get_dates,
     #                           do_xcom_push=True)
@@ -360,7 +360,7 @@ def daily_sentinel_batch_ingest_processing_dag():
     download_files >> get_new_list >> process_date_group()
     """
     search_files
-    
-dag_instance = daily_sentinel_batch_ingest_processing_dag()
+
+dag_instance = daily_sentinel_batch_AARNet_processing_dag()
 
 
