@@ -137,7 +137,7 @@ def importing(**context):
         command = (
             'module load sdc_testing &&'
             'cd $FILESTORE_PATH/download/test &&'
-            'python ~/workspace/updateSentinel_fromSara.py --task search --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"'
+            'python ~/workspace/updateSentinel_fromSara_new.py --task search --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"'
  
         )
         logger.info(f"Executing command: {command}")
