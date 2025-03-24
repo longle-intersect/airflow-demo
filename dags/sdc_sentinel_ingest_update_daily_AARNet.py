@@ -238,7 +238,7 @@ def daily_sentinel_batch_AARNet_processing_dag():
         task_id='search_new_files',
         python_callable=searching,
         provide_context=True,
-        dag=dag,
+        #dag=dag,
     )
 
     # download_files = SSHOperator(
