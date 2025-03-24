@@ -19,7 +19,7 @@ with DAG(
     dag_id="test_secure_dtn_access",
     default_args=default_args,
     description="A simple DAG to test secure SSH connection and submit a SLURM job",
-    schedule_interval='*/5 * * * *',
+    schedule_interval= None, #'*/5 * * * *',
     start_date=datetime(2025, 3, 6),
     catchup=False,
     tags=["ssh", "example"],

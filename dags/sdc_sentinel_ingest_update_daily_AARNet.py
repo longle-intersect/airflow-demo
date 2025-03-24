@@ -1,5 +1,6 @@
 import sys
 import logging
+import os
 sys.path.insert(0, '/opt/airflow/dags/repo/plugins')
 sys.path.insert(0, '/opt/airflow/')
 import re
@@ -7,16 +8,20 @@ from airflow import DAG
 from airflow.decorators import dag, task, task_group
 from airflow.operators.bash import BashOperator
 from airflow.providers.ssh.operators.ssh import SSHOperator
+from airflow.providers.ssh.hooks.ssh import SSHHook
 from datetime import datetime, timedelta
 from airflow.utils.dates import days_ago
 from airflow.operators.python import PythonOperator
+from airflow.exceptions import AirflowException
 from plugins.slurm_job_handler_new import SlurmJobHandlingSensor
 from airflow.utils.task_group import TaskGroup
 from airflow.models.baseoperator import chain
 from airflow.models import XCom, Variable
 import base64
 
+# Set up logging
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logger = logging.getLogger("airflow.task")
 remote_path='/home/lelong/log_airflow_slurm/scripts/'
 local_path='/opt/airflow/slurm_script/' 
 
@@ -48,6 +53,149 @@ def parse_file_list(ti):
     Variable.set("new_list", processed_list, serialize_json=True)
     return processed_list
 
+# Function to execute SSH command and parse output
+def searching(**context):
+    try:
+        logger.info("Starting SSH task execution")
+        
+        # Initialize SSH connection
+        ssh_hook = SSHHook(ssh_conn_id='slurm_ssh_connection')
+        ssh_client = ssh_hook.get_conn()
+
+        # Define the command
+        command = (
+            'cd $FILESTORE_PATH/download/test &&'
+            'python ~/workspace/updateSentinel_fromSara.py --task search --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"'
+ 
+        )
+        logger.info(f"Executing command: {command}")
+
+        # Execute the command
+        stdin, stdout, stderr = ssh_client.exec_command(command, timeout=300)  # 5-minute timeout
+        
+        # Wait for the command to complete and get exit status
+        exit_status = stdout.channel.recv_exit_status()
+        output = stdout.read().decode('utf-8')
+        error_output = stderr.read().decode('utf-8')
+
+        logger.info(f"Command exit status: {exit_status}")
+        logger.info(f"Command output: {output}")
+        if error_output:
+            logger.error(f"Command stderr: {error_output}")
+
+        # Check for command failure
+        if exit_status != 0:
+            raise AirflowException(f"SSH command failed with exit code {exit_status}. Error: {error_output}")
+
+        # Process the output
+        lines = output.split('\n')
+        url_list = None
+        url_file = None
+        for line in lines:
+            if line.startswith('XCOM_URL_LIST:'):
+                url_list = int(line.replace('XCOM_URL_LIST:', '').strip())
+            elif line.startswith('XCOM_URL_FILE:'):
+                url_file = line.replace('XCOM_URL_FILE:', '').strip()
+ 
+        # Push results to XCom
+        # file_list_name = url_file.split('/')[-1]
+
+        # os.makedirs(local_tmp_path, mode=0o777, exist_ok=True)
+        # sftp_client = ssh_client.open_sftp()
+        # #sftp_client.get(filename_list, local_tmp_path)
+        # local_filelist = local_tmp_path+file_list_name
+        # sftp_client.get(file_list, local_filelist)
+        # sftp_client.close()
+
+        # with open(local_filelist, 'r') as f:
+        #     files = [line.strip() for line in f if line.strip()]
+
+        context['ti'].xcom_push(key='url_list', value=url_list)
+        context['ti'].xcom_push(key='url_file', value=url_file)    
+
+        logger.info(f"URL List: {url_list}")
+        logger.info(f"URL File: {url_file}")
+
+    except Exception as e:
+        logger.error(f"Task failed with exception: {str(e)}", exc_info=True)
+        raise AirflowException(f"Task execution failed: {str(e)}")
+    finally:
+        if 'ssh_client' in locals():
+            logger.info("Closing SSH connection")
+            ssh_client.close()
+
+# Function to execute SSH command and parse output
+def importing(**context):
+    try:
+        logger.info("Starting SSH task execution")
+        
+        # Initialize SSH connection
+        ssh_hook = SSHHook(ssh_conn_id='slurm_ssh_connection')
+        ssh_client = ssh_hook.get_conn()
+
+        # Define the command
+        command = (
+            'module load sdc_testing &&'
+            'cd $FILESTORE_PATH/download/test &&'
+            'python ~/workspace/updateSentinel_fromSara.py --task search --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"'
+ 
+        )
+        logger.info(f"Executing command: {command}")
+
+        # Execute the command
+        stdin, stdout, stderr = ssh_client.exec_command(command, timeout=300)  # 5-minute timeout
+        
+        # Wait for the command to complete and get exit status
+        exit_status = stdout.channel.recv_exit_status()
+        output = stdout.read().decode('utf-8')
+        error_output = stderr.read().decode('utf-8')
+
+        logger.info(f"Command exit status: {exit_status}")
+        logger.info(f"Command output: {output}")
+        if error_output:
+            logger.error(f"Command stderr: {error_output}")
+
+        # Check for command failure
+        if exit_status != 0:
+            raise AirflowException(f"SSH command failed with exit code {exit_status}. Error: {error_output}")
+
+        # Process the output
+        # lines = output.split('\n')
+        # num_files = None
+        # folder_visited = None
+        # for line in lines:
+        #     if line.startswith('XCOM_URL_LIST:'):
+        #         url_list = int(line.replace('XCOM_URL_LIST:', '').strip())
+        #     elif line.startswith('XCOM_URL_FILE:'):
+        #         url_file = line.replace('XCOM_URL_FILE:', '').strip()
+ 
+        # Push results to XCom
+        # file_list_name = url_file.split('/')[-1]
+
+        # os.makedirs(local_tmp_path, mode=0o777, exist_ok=True)
+        # sftp_client = ssh_client.open_sftp()
+        # #sftp_client.get(filename_list, local_tmp_path)
+        # local_filelist = local_tmp_path+file_list_name
+        # sftp_client.get(file_list, local_filelist)
+        # sftp_client.close()
+
+        # with open(local_filelist, 'r') as f:
+        #     files = [line.strip() for line in f if line.strip()]
+
+        # context['ti'].xcom_push(key='url_list', value=url_list)
+        # context['ti'].xcom_push(key='url_file', value=url_file)    
+
+        # logger.info(f"URL List: {url_list}")
+        # logger.info(f"URL File: {url_file}")
+
+    except Exception as e:
+        logger.error(f"Task failed with exception: {str(e)}", exc_info=True)
+        raise AirflowException(f"Task execution failed: {str(e)}")
+    finally:
+        if 'ssh_client' in locals():
+            logger.info("Closing SSH connection")
+            ssh_client.close()
+
 
 # DAG Configuration
 default_args = {
@@ -61,12 +209,12 @@ default_args = {
 }
 
 
-@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_4',
+@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_AARNet',
      default_args=default_args,
-     description='Daily Ingest and Update Sentinel-2 Imagery using TaskGroup 4 on SDC',
+     description='Daily Ingest with AARNet and Update Sentinel-2 Imagery using TaskGroup 4 on SDC',
      schedule_interval=None,
      start_date=days_ago(1),
-     tags=['sdc', 'sentinel'])
+     tags=['sdc', 'sentinel', 'daily'])
 def daily_sentinel_batch_ingest_processing_dag():
     # get_list = PythonOperator(task_id="get_img_list",
     #                           python_callable=get_dates,
@@ -75,19 +223,42 @@ def daily_sentinel_batch_ingest_processing_dag():
     # SSH to list files in the directory
     # ls *.img *.meta >> newer.txt;
     # cat newer.txt;
+    # search_files = SSHOperator(
+    #     task_id='search_files',
+    #     ssh_conn_id= 'slurm_ssh_connection', #'aarnet_ssh_connection',
+    #     command="""
+    #    """,
+    #     conn_timeout=3600,
+    #     cmd_timeout=3600,
+    #     do_xcom_push=True  # Pushes the command output to XCom
+    # )
+
+    # Define the task
+    search_files = PythonOperator(
+        task_id='search_new_files',
+        python_callable=searching,
+        provide_context=True,
+        dag=dag,
+    )
+
     download_files = SSHOperator(
         task_id='download_files',
-        ssh_conn_id='slurm_ssh_connection',
+        ssh_conn_id= 'aarnet_ssh_connection',
         command="""
-        module load sdc_testing;
-        cd $FILESTORE_PATH/download/;
-        python ~/workspace/updateSentinel_fromSara.py --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2024-12-09 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C";
+        curl -n -L -O -J --silent --show-error "{{ ti.xcom_pull(task_ids='search_new_files', key='url_list') }}"
         """,
         conn_timeout=3600,
         cmd_timeout=3600,
         do_xcom_push=True  # Pushes the command output to XCom
     )
 
+    import_files = PythonOperator(
+        task_id='import_files',
+        python_callable=importing,
+        provide_context=True,
+        dag=dag,
+    )
+    """
     get_new_list = PythonOperator(
         task_id="get_new_list",
         python_callable=parse_file_list,
@@ -187,7 +358,9 @@ def daily_sentinel_batch_ingest_processing_dag():
 
     # Link the start task to the task group
     download_files >> get_new_list >> process_date_group()
-
+    """
+    search_files
+    
 dag_instance = daily_sentinel_batch_ingest_processing_dag()
 
 

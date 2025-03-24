@@ -2372,9 +2372,9 @@ default_args = {
 
 # Define DAG
 with DAG(
-    "test_sentinel2_json_full_lineage_8",
+    "test_sentinel2_lineage_ad6",
     default_args=default_args,
-    description="Dynamically generated Sentinel-2 pipeline from JSON with lineage full",
+    description="Dynamically generated Sentinel-2 pipeline from JSON with full lineage",
     start_date=None,
     is_paused_upon_creation=False,
     catchup=False,

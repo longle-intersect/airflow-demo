@@ -7,7 +7,7 @@ sys.path.insert(0, '/opt/airflow/utils')
 from airflow.providers.ssh.hooks.ssh import SSHHook
 from airflow.sensors.base_sensor_operator import BaseSensorOperator
 from airflow.utils.decorators import apply_defaults
-from sentinel_utils import *
+
 #from utils.landsat_utils import *
 from airflow.exceptions import AirflowException
 from airflow.plugins_manager import AirflowPlugin
@@ -21,53 +21,31 @@ This is useful if in poke mode, where poking slurm or other queue occurs before
 the job is registered in the queue.
 """
 
-class SlurmJobHandlingSensor(BaseSensorOperator):
-    template_fields = ('date', 'processing_stage')
+class GeneralSlurmJobHandlingSensor(BaseSensorOperator):
+    template_fields = ('script_path', 'ssh_conn_id')
 
     @apply_defaults
-    def __init__(self, ssh_conn_id, script_name, remote_path, local_path,
-                 date, stage, *args, **kwargs):
+    def __init__(self, ssh_conn_id, script_path, remote_path, local_path, *args, **kwargs):
         """
         This operator plugin submits a job scheduler job and periodically (and
         asynchronously) checks whether the job has completed or failed.
         If a failure of any kind occurs (such as a timeout) then the job is
         removed from the queue.
         """        
-        super(SlurmJobHandlingSensor, self).__init__(*args, **kwargs)
+        super(GeneralSlurmJobHandlingSensor, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
-        #self.script_id = script_name
-        self.script_id = f'sentt_{date}'
-        self.script_name = self.script_id + "_s" + stage + ".slurm"
+        self.script_path = script_path
         self.remote_path = remote_path
         self.local_path = local_path
         os.makedirs(self.local_path, mode=0o777, exist_ok=True)
-        #self.stage_script = stage_script
+
         self.job_id = None
-        self.date = date
-        self.processing_stage = stage
 
-        #from airflow.operators.python import get_current_context
-        #context = get_current_context()
-        #map_index = context['ti'].map_index  # Accessing the map index for the current task instance
-        #context['ti'].map_index = self.script_id + str(map_index)
-        #self.log.info(f"Processing task with map_index: {context['ti'].map_index}, date: {self.date}, stage: {self.processing_stage}")
-
-    #def execute(self, context):
-    #    job_id = self._submit_job()
-    #    return job_id
-
-        self.log.info(f"Processing of {self.date}:- Stage {self.processing_stage}")
     
     def poke(self, context):
 
         if not self.job_id:
             #self.script_path = self._create_slurm_script()
-            self.script_stage = generate_script_stage(self.date,
-                                                      self.processing_stage)
-
-            self.script_path = create_slurm_script(self.script_name,
-                                                   self.script_stage,
-                                                   self.local_path)
             self.job_id = self._submit_job()
             return False
         
@@ -78,7 +56,6 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             output_content, error_content = self._fetch_job_files()
             context['task_instance'].xcom_push(key='output_content', value=output_content)
             context['task_instance'].xcom_push(key='error_content', value=error_content)
-            context['task_instance'].xcom_push(key='image_id', value=self.date)
             self.log.info(f"Output of {self.job_id}: {output_content}")
 
             if error_content:
@@ -91,24 +68,32 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             return False
 
     def _submit_job(self):
+
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)
         with ssh_hook.get_conn() as ssh_client:
-            remote_script_path = f'{self.remote_path}/{self.script_name}'
-            remote_output_path = f'{self.remote_path}/{self.script_name}.out'
-            remote_error_path = f'{self.remote_path}/{self.script_name}.err'
-            local_script_path = f'{self.local_path}/{self.script_name}'
+            remote_script_path = self.script_path
+            # remote_output_path = f'{self.script_path[:-6]}_%j.out'
+            # remote_error_path = f'{self.script_path[:-6]}_%j.err'
+            # local_script_path = f'{self.local_path}/{self.script_name}.slurm'
 
-            sftp_client = ssh_client.open_sftp()
-            sftp_client.put(local_script_path, remote_script_path)
-            sftp_client.close()
+            # sftp_client = ssh_client.open_sftp()
+            # sftp_client.put(local_script_path, remote_script_path)
+            # sftp_client.close()
 
-            command = f'sbatch --output={remote_output_path} --error={remote_error_path} {remote_script_path}'
+            command = f'sbatch {remote_script_path}'
+
+            self.log.info(f"Job Command {command}")
+
             stdin, stdout, stderr = ssh_client.exec_command(command)
             job_info = stdout.read().decode('utf-8').strip()
+
+            self.log.info(f"Job Info {job_info}")
+
             job_id = job_info.split()[-1]  # Assumes Slurm outputs "Submitted batch job <job_id>"
             return job_id
 
     def _check_job_status(self):
+
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)
         with ssh_hook.get_conn() as ssh_client:
             command = f'squeue -j {self.job_id}' # -o "%T"
@@ -126,14 +111,20 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             else:
                 return True
 
-    def _fetch_job_files(self,):
+    def _fetch_job_files(self):
+
+        self.script_name = self.script_path.split("/")[-1][:-6]
         ssh_hook = SSHHook(ssh_conn_id=self.ssh_conn_id)
         with ssh_hook.get_conn() as ssh_client:
             sftp_client = ssh_client.open_sftp()
-            remote_output_path = f'{self.remote_path}/{self.script_name}.out'
-            remote_error_path = f'{self.remote_path}/{self.script_name}.err'
+            remote_output_path = f'{self.remote_path}/{self.script_name}_{self.job_id}.out'
+            remote_error_path = f'{self.remote_path}/{self.script_name}_{self.job_id}.err'
             local_output_path = f'{self.local_path}/{self.script_name}_{self.job_id}.out'
             local_error_path = f'{self.local_path}/{self.script_name}_{self.job_id}.err'
+
+            self.log.info(f"Remote output_path: {remote_output_path}")
+            self.log.info(f"Local output_path: {local_output_path}")
+            
             sftp_client.get(remote_output_path, local_output_path)
             sftp_client.get(remote_error_path, local_error_path)
             sftp_client.close()
@@ -149,8 +140,8 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             return output_content, error_content
 
 class AirflowJobSchedulerPlugin(AirflowPlugin):
-    name = 'slurm_job_handler_sentinel'
-    operators = [SlurmJobHandlingSensor]
+    name = 'slurm_job_handler_general'
+    operators = [GeneralSlurmJobHandlingSensor]
     hooks = []
     executors = []
     macros = []
