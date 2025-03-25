@@ -4,12 +4,16 @@ import os
 sys.path.insert(0, '/opt/airflow/dags/repo/plugins')
 sys.path.insert(0, '/opt/airflow/')
 import re
+from datetime import datetime, timedelta
+import subprocess
+import base64
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from airflow import DAG
 from airflow.decorators import dag, task, task_group
 from airflow.operators.bash import BashOperator
 from airflow.providers.ssh.operators.ssh import SSHOperator
 from airflow.providers.ssh.hooks.ssh import SSHHook
-from datetime import datetime, timedelta
 from airflow.utils.dates import days_ago
 from airflow.operators.python import PythonOperator
 from airflow.exceptions import AirflowException
@@ -17,7 +21,7 @@ from plugins.slurm_job_handler_new import SlurmJobHandlingSensor
 from airflow.utils.task_group import TaskGroup
 from airflow.models.baseoperator import chain
 from airflow.models import XCom, Variable
-import base64
+
 
 # Set up logging
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -136,7 +140,7 @@ def importing(**context):
         # Define the command
         command = (
             'module load sdc_testing &&'
-            'cd $FILESTORE_PATH/download/test &&'
+            'cd $FILESTORE_PATH/tmp_shared &&'
             'python ~/workspace/updateSentinel_fromSara_new.py --task import --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"'
  
         )
@@ -197,6 +201,59 @@ def importing(**context):
             ssh_client.close()
 
 
+def download_files(**kwargs):
+    shared_dir = "$FILESTORE_PATH/tmp_shared"  # Shared filestore between HPC and AARNet
+    urls_file = os.path.join(shared_dir, "sara_urls.txt")
+    downloaded_files = os.path.join(shared_dir, "downloaded_files.txt")
+    max_concurrent = 2  # Adjust based on AARNet capacity
+    
+    # Initialize SSHHook for AARNet
+    aarnet_hook = SSHHook(ssh_conn_id='aarnet_ssh_connection')
+    
+    # Read URLs from file
+    with open(urls_file, 'r') as f:
+        urls = [line.strip() for line in f.readlines() if line.strip()]
+    
+    if not urls:
+        print("No URLs to download.")
+        return
+    
+    # Remove existing downloaded_files list
+    if os.path.exists(downloaded_files):
+        os.remove(downloaded_files)
+    
+    def download_url(url):
+        filename = url.split('/')[-1]
+        curl_cmd = f"cd {shared_dir} && curl -n -L -O -J --silent --show-error {url}"
+        
+        # Execute curl on AARNet using SSHHook
+        try:
+            ssh_client = aarnet_hook.get_conn()
+            stdin, stdout, stderr = ssh_client.exec_command(curl_cmd)
+            exit_status = stdout.channel.recv_exit_status()  # Wait for command to complete
+            stderr_output = stderr.read().decode().strip()
+            
+            if exit_status != 0 or stderr_output:
+                print(f"Failed to download {filename}: {stderr_output}")
+                return None
+            return filename
+        finally:
+            ssh_client.close()
+    
+    # Run downloads in parallel
+    downloaded = []
+    with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+        future_to_url = {executor.submit(download_url, url): url for url in urls}
+        for future in as_completed(future_to_url):
+            result = future.result()
+            if result:
+                downloaded.append(result)
+    
+    # Write successful downloads to file
+    with open(downloaded_files, 'w') as f:
+        f.write('\n'.join(downloaded))
+    print(f"Downloaded {len(downloaded)} files to {shared_dir}, listed in {downloaded_files}")
+
 # DAG Configuration
 default_args = {
     'owner': 'airflow',
@@ -235,28 +292,36 @@ def daily_sentinel_batch_AARNet_processing_dag():
 
     # Define the task
     search_files = PythonOperator(
-        task_id='search_new_files',
+        task_id='search_new_images',
         python_callable=searching,
         provide_context=True,
         #dag=dag,
     )
 
-    download_files = SSHOperator(
+    # Download task (runs on Airflow worker with SSHHook to AARNet)
+    download_files = PythonOperator(
         task_id='download_files',
-        ssh_conn_id= 'aarnet_ssh_connection',
-        command="""
-        curl -n -L -O -J --silent --show-error "{{ ti.xcom_pull(task_ids='search_new_files', key='url_list') }}"
-        """,
-        conn_timeout=3600,
-        cmd_timeout=3600,
-        do_xcom_push=True  # Pushes the command output to XCom
+        python_callable=download_files,
+        provide_context=True,
+        #dag=dag
     )
+
+    # download_files = SSHOperator(
+    #     task_id='download_files',
+    #     ssh_conn_id= 'aarnet_ssh_connection',
+    #     command="""
+    #     curl -n -L -O -J --silent --show-error "{{ ti.xcom_pull(task_ids='search_new_files', key='url_list') }}"
+    #     """,
+    #     conn_timeout=3600,
+    #     cmd_timeout=3600,
+    #     do_xcom_push=True  # Pushes the command output to XCom
+    # )
 
     # import_files = PythonOperator(
     #     task_id='import_files',
     #     python_callable=importing,
     #     provide_context=True,
-    #     dag=dag,
+    #     #dag=dag,
     # )
     
     # get_new_list = PythonOperator(
@@ -359,7 +424,7 @@ def daily_sentinel_batch_AARNet_processing_dag():
     # # Link the start task to the task group
     # download_files >> get_new_list >> process_date_group()
     
-    search_files >> download_files
+    search_files >> download_files #>> import_files
 
 dag_instance = daily_sentinel_batch_AARNet_processing_dag()
 
