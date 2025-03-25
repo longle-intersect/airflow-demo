@@ -132,20 +132,10 @@ def searching(**context):
             logger.info("Closing SSH connection")
             ssh_client.close()
 
-def download_url(**context):
+def download_url(url, **context):
 
-    url_idx = int(context['task'].task_id.split('_')[-1])  # Extract index from task_id
-    urls = context['ti'].xcom_pull(task_ids='search_new_images', key='url_list')
-
-
-    if not urls or url_idx >= len(urls):
-        logger.info(f"No URL available for index {url_idx}. Skipping task.")
-        context['ti'].xcom_push(key=f'uri_{url_idx}', value=None)
-        context['ti'].xcom_push(key=f'download_status_{url_idx}', value="Skipped")
-        return None
-
-    url = urls[url_idx]
-    logger.info(f"Starting download for {url}")
+    # Initialize SSHHook for AARNet
+    logger.info("Starting downloading task")
 
     aarnet_hook = SSHHook(ssh_conn_id='aarnet_ssh_connection')
 
@@ -171,10 +161,10 @@ def download_url(**context):
 
         if exit_status != 0 or stderr_output or not uri:
             logger.error(f"Failed to get filename for {url}: {stderr_output}")
-            context['ti'].xcom_push(key=f'uri_{url_idx}', value=None)
+            context['ti'].xcom_push(key=f'uri_{context["task_instance"].task_id}', value=None)
             return None
 
-        context['ti'].xcom_push(key=f'uri_{url_idx}', value=uri)
+        context['ti'].xcom_push(key=f'uri_{context["task_instance"].task_id}', value=uri)
         logger.info(f"Resolved URI: {uri}")
     except Exception as e:
         logger.error(f"Error in HEAD request for {url}: {str(e)}")
@@ -191,15 +181,15 @@ def download_url(**context):
         
         if exit_status != 0 or stderr_output:
             logger.error(f"Failed to download {uri}: {stderr_output}")
-            context['ti'].xcom_push(key=f'download_status_{url_idx}', value="Failed")
+            context['ti'].xcom_push(key=f'download_status_{context["task_instance_key_str"]}', value="Failed")
             return None
         
         logger.info(f"Successfully downloaded {uri} to {shared_dir}")
-        context['ti'].xcom_push(key=f'download_status_{url_idx}', value="Success")
+        context['ti'].xcom_push(key=f'download_status_{context["task_instance_key_str"]}', value="Success")
         return uri
     except Exception as e:
         logger.error(f"Error downloading {url}: {str(e)}")
-        context['ti'].xcom_push(key=f'download_status_{url_idx}', value="Failed")
+        context['ti'].xcom_push(key=f'download_status_{context["task_instance_key_str"]}', value="Failed")
         return None
     finally:
         ssh_client.close()
@@ -217,14 +207,14 @@ default_args = {
 }
 
 
-@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_AARNet',
+@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_AARNet_1',
      default_args=default_args,
-     description='Daily Ingest with AARNet and Update Sentinel-2 Imagery using TaskGroup 4 on SDC',
+     description='Daily Ingest with AARNet and Update Sentinel-2 Imagery using TaskGroup 4 on SDC v1',
      schedule_interval=None,
      start_date=days_ago(1),
      concurrency = 4,
      tags=['sdc', 'sentinel', 'daily'])
-def daily_sentinel_batch_AARNet_processing_dag():
+def daily_sentinel_batch_AARNet_processing_dag_1():
 
     # Define the task
     search_files = PythonOperator(
@@ -235,31 +225,30 @@ def daily_sentinel_batch_AARNet_processing_dag():
     )
 
     # Function to create TaskGroup for batch processing
-    max_tasks = 4  # Adjust based on expected max URLs
     @task_group(group_id="batch_processing")
     def create_batch_tasks():
-        #urls = context['ti'].xcom_pull(task_ids='search_new_images', key='url_list')
+        urls = context['ti'].xcom_pull(task_ids='search_new_images', key='url_list')
         # urls_file = os.path.join(local_tmp_path, "sara_urls.txt")
         
         # # Read URLs from file
         # with open(urls_file, 'r') as f:
         #     urls = [line.strip() for line in f.readlines() if line.strip()]
 
-        #if not urls:
-        #    logger.info("No URLs to process.")
-        #    return
+        if not urls:
+            logger.info("No URLs to process.")
+            return
         
        # with TaskGroup(group_id='batch_processing', tooltip="Batch Download and Import Tasks") as batch_group:
-        #for idx, url in enumerate(urls):
-        for idx in range(max_tasks):
+        for idx, url in enumerate(urls):
                 #filename = url.split('/')[-1]
                 #file_path = os.path.join(shared_dir, filename)
+            
             @task_group(group_id=f'download_import_{idx}', tooltip="Batch Download and Import Tasks")
-            def download_and_import_url():     # Define the task
+            def download_and_import_url(url):     # Define the task
                 download_task = PythonOperator(
                     task_id=f'download_{idx}',
                     python_callable=download_url,
-                    #op_kwargs={'url': url},
+                    op_kwargs={'url': url},
                     provide_context=True,
                     do_xcom_push=True,
                     #dag=dag,
@@ -275,11 +264,11 @@ def daily_sentinel_batch_AARNet_processing_dag():
                 # Set dependency within each batch
                 download_task #>> import_task
 
-            download_and_import_url()
+            download_and_import_url(url)
     
     search_files >> create_batch_tasks()
 
-dag_instance = daily_sentinel_batch_AARNet_processing_dag()
+dag_instance = daily_sentinel_batch_AARNet_processing_dag_1()
 
     # Batch processing task
     # download_and_import = PythonOperator(
