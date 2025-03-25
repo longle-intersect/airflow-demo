@@ -261,13 +261,15 @@ default_args = {
 }
 
 
-@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_AARNet',
-     default_args=default_args,
-     description='Daily Ingest with AARNet and Update Sentinel-2 Imagery using TaskGroup 4 on SDC',
-     schedule_interval=None,
-     start_date=days_ago(1),
-     tags=['sdc', 'sentinel', 'daily'])
-def daily_sentinel_batch_AARNet_processing_dag():
+with DAG(
+    dag_id='sdc_sentinel_batch_ingest_update_daily_AARNet',
+    default_args=default_args,
+    description='Daily Ingest with AARNet and Update Sentinel-2 Imagery using TaskGroup 4 on SDC',
+    schedule_interval=None,
+    start_date=days_ago(1),
+    tags=['sdc', 'sentinel', 'daily'],
+    concurrency=4  # Limit parallelism to 4 batches
+) as dag:
 
     # Define the task
     search_files = PythonOperator(
@@ -437,7 +439,5 @@ def daily_sentinel_batch_AARNet_processing_dag():
     # download_files >> get_new_list >> process_date_group()
     
     search_files >> download_and_import #>> import_files
-
-dag_instance = daily_sentinel_batch_AARNet_processing_dag()
 
 
