@@ -68,7 +68,7 @@ def searching(**context):
 
         # Define the command
         command = (
-            'cd /mnt/scratch_lustre/tmp/rs_testing/download/test &&'
+            'cd /mnt/scratch_lustre/tmp/rs_testing/tmp_shared &&'
             'python ~/workspace/updateSentinel_fromSara_new.py --task search --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"'
  
         )
@@ -202,7 +202,7 @@ def importing(**context):
 
 
 def download_files(**kwargs):
-    shared_dir = "$FILESTORE_PATH/tmp_shared"  # Shared filestore between HPC and AARNet
+    shared_dir = "/mnt/scratch_lustre/tmp/rs_testing/tmp_shared"  # Shared filestore between HPC and AARNet
     urls_file = os.path.join(shared_dir, "sara_urls.txt")
     downloaded_files = os.path.join(shared_dir, "downloaded_files.txt")
     max_concurrent = 2  # Adjust based on AARNet capacity
