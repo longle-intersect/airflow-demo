@@ -30,6 +30,8 @@ remote_path='/home/lelong/log_airflow_slurm/scripts/'
 local_path='/opt/airflow/slurm_script/' 
 local_tmp_path='/opt/airflow/tmp_files/'
 local_metadata_path ='/opt/airflow/tmp_metadata/'
+shared_dir = "/mnt/scratch_lustre/tmp/rs_testing/tmp_shared/"  # Shared filestore between HPC and AARNet
+
 # Function to parse the output and extract file names
 
 # Function to extract the tile identifier and date from filenames
@@ -69,9 +71,9 @@ def searching(**context):
 
         # Define the command
         command = (
-            'cd /mnt/scratch_lustre/tmp/rs_testing/tmp_shared &&'
+            f'cd {shared_dir} &&'
             'python ~/workspace/updateSentinel_fromSara_new.py --task search --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C" &&'
-            'chmod 777 /mnt/scratch_lustre/tmp/rs_testing/tmp_shared/sara_urls.txt'
+            #'chmod 777 /mnt/scratch_lustre/tmp/rs_testing/tmp_shared/sara_urls.txt'
         )
         logger.info(f"Executing command: {command}")
 
@@ -108,7 +110,7 @@ def searching(**context):
         os.makedirs(local_tmp_path, mode=0o777, exist_ok=True)
         sftp_client = ssh_client.open_sftp()
         #sftp_client.get(filename_list, local_tmp_path)
-        remote_filelist = '/mnt/scratch_lustre/tmp/rs_testing/tmp_shared/' + file_list_name
+        remote_filelist = shared_dir + file_list_name
         local_filelist = local_tmp_path + file_list_name
         sftp_client.get(remote_filelist, local_filelist)
         sftp_client.close()
@@ -129,79 +131,6 @@ def searching(**context):
         if 'ssh_client' in locals():
             logger.info("Closing SSH connection")
             ssh_client.close()
-
-# Function to execute SSH command and parse output
-def importing(**context):
-    try:
-        logger.info("Starting SSH task execution")
-        
-        # Initialize SSH connection
-        ssh_hook = SSHHook(ssh_conn_id='slurm_ssh_connection')
-        ssh_client = ssh_hook.get_conn()
-
-        # Define the command
-        command = (
-            'module load sdc_testing &&'
-            'cd /mnt/scratch_lustre/tmp/rs_testing/tmp_shared &&'
-            'python ~/workspace/updateSentinel_fromSara_new.py --task import --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"'
- 
-        )
-        logger.info(f"Executing command: {command}")
-
-        # Execute the command
-        stdin, stdout, stderr = ssh_client.exec_command(command, timeout=300)  # 5-minute timeout
-        
-        # Wait for the command to complete and get exit status
-        exit_status = stdout.channel.recv_exit_status()
-        output = stdout.read().decode('utf-8')
-        error_output = stderr.read().decode('utf-8')
-
-        logger.info(f"Command exit status: {exit_status}")
-        logger.info(f"Command output: {output}")
-        if error_output:
-            logger.error(f"Command stderr: {error_output}")
-
-        # Check for command failure
-        if exit_status != 0:
-            raise AirflowException(f"SSH command failed with exit code {exit_status}. Error: {error_output}")
-
-        # Process the output
-        # lines = output.split('\n')
-        # num_files = None
-        # folder_visited = None
-        # for line in lines:
-        #     if line.startswith('XCOM_URL_LIST:'):
-        #         url_list = int(line.replace('XCOM_URL_LIST:', '').strip())
-        #     elif line.startswith('XCOM_URL_FILE:'):
-        #         url_file = line.replace('XCOM_URL_FILE:', '').strip()
- 
-        # Push results to XCom
-        # file_list_name = url_file.split('/')[-1]
-
-        # os.makedirs(local_tmp_path, mode=0o777, exist_ok=True)
-        # sftp_client = ssh_client.open_sftp()
-        # #sftp_client.get(filename_list, local_tmp_path)
-        # local_filelist = local_tmp_path+file_list_name
-        # sftp_client.get(file_list, local_filelist)
-        # sftp_client.close()
-
-        # with open(local_filelist, 'r') as f:
-        #     files = [line.strip() for line in f if line.strip()]
-
-        # context['ti'].xcom_push(key='url_list', value=url_list)
-        # context['ti'].xcom_push(key='url_file', value=url_file)    
-
-        # logger.info(f"URL List: {url_list}")
-        # logger.info(f"URL File: {url_file}")
-
-    except Exception as e:
-        logger.error(f"Task failed with exception: {str(e)}", exc_info=True)
-        raise AirflowException(f"Task execution failed: {str(e)}")
-    finally:
-        if 'ssh_client' in locals():
-            logger.info("Closing SSH connection")
-            ssh_client.close()
-
 
 def downloading(**context):
     shared_dir = "/mnt/scratch_lustre/tmp/rs_testing/tmp_shared"  # Shared filestore between HPC and AARNet
@@ -256,6 +185,70 @@ def downloading(**context):
         f.write('\n'.join(downloaded))
     print(f"Downloaded {len(downloaded)} files to {shared_dir}, listed in {downloaded_files}")
 
+
+def download_url(url, **context):
+
+    # Initialize SSHHook for AARNet
+    logger.info("Starting downloading task")
+
+    aarnet_hook = SSHHook(ssh_conn_id='aarnet_ssh_connection')
+
+    curl_cmd_filename = f"cd {shared_dir} && curl --silent -n --location --head {url}"
+    curl_cmd = f"cd {shared_dir} && curl -n -L -O -J --silent --show-error {url}"
+    
+    uri = None
+    # Execute curl on AARNet using SSHHook
+    try:
+        ssh_client = aarnet_hook.get_conn()
+        stdin, stdout, stderr = ssh_client.exec_command(curl_cmd_filename)
+        exit_status = stdout.channel.recv_exit_status()  # Wait for command to complete
+        stdout_output = stdout.read().decode('utf-8').strip()
+        stderr_output = stderr.read().decode('utf-8').strip()
+        
+        logger.info(f"HEAD stdout: {stdout_output}")
+        
+        # Parse the Location header to get the final URI
+        for line in stdout_output.split('\n'):
+            if line.startswith('Location: '):
+                uri = line.split(' ', 1)[1].strip()
+                break
+
+        if exit_status != 0 or stderr_output or not uri:
+            logger.error(f"Failed to get filename for {url}: {stderr_output}")
+            context['ti'].xcom_push(key=f'uri_{context["task_instance"].task_id}', value=None)
+            return None
+
+        context['ti'].xcom_push(key=f'uri_{context["task_instance"].task_id}', value=uri)
+        logger.info(f"Resolved URI: {uri}")
+    except Exception as e:
+        logger.error(f"Error in HEAD request for {url}: {str(e)}")
+        return None
+    finally:
+        ssh_client.close()
+
+    # Execute curl on AARNet using SSHHook
+    try:
+        ssh_client = aarnet_hook.get_conn()
+        stdin, stdout, stderr = ssh_client.exec_command(curl_cmd)
+        exit_status = stdout.channel.recv_exit_status()  # Wait for command to complete
+        stderr_output = stderr.read().decode().strip()
+        
+        if exit_status != 0 or stderr_output:
+            logger.error(f"Failed to download {uri}: {stderr_output}")
+            context['ti'].xcom_push(key=f'download_status_{context["task_instance_key_str"]}', value="Failed")
+            return None
+        
+        logger.info(f"Successfully downloaded {uri} to {shared_dir}")
+        context['ti'].xcom_push(key=f'download_status_{context["task_instance_key_str"]}', value="Success")
+        return uri
+    except Exception as e:
+        logger.error(f"Error downloading {url}: {str(e)}")
+        context['ti'].xcom_push(key=f'download_status_{context["task_instance_key_str"]}', value="Failed")
+        return None
+    finally:
+        ssh_client.close()
+
+
 # DAG Configuration
 default_args = {
     'owner': 'airflow',
@@ -275,22 +268,6 @@ default_args = {
      start_date=days_ago(1),
      tags=['sdc', 'sentinel', 'daily'])
 def daily_sentinel_batch_AARNet_processing_dag():
-    # get_list = PythonOperator(task_id="get_img_list",
-    #                           python_callable=get_dates,
-    #                           do_xcom_push=True)
-
-    # SSH to list files in the directory
-    # ls *.img *.meta >> newer.txt;
-    # cat newer.txt;
-    # search_files = SSHOperator(
-    #     task_id='search_files',
-    #     ssh_conn_id= 'slurm_ssh_connection', #'aarnet_ssh_connection',
-    #     command="""
-    #    """,
-    #     conn_timeout=3600,
-    #     cmd_timeout=3600,
-    #     do_xcom_push=True  # Pushes the command output to XCom
-    # )
 
     # Define the task
     search_files = PythonOperator(
@@ -300,14 +277,47 @@ def daily_sentinel_batch_AARNet_processing_dag():
         #dag=dag,
     )
 
-    # Download task (runs on Airflow worker with SSHHook to AARNet)
-    download_files = PythonOperator(
-        task_id='download_images',
-        python_callable=downloading,
-        provide_context=True,
-        #dag=dag
-    )
+    # Function to create TaskGroup for batch processing
+    def create_batch_tasks(**context):
+        urls = context['ti'].xcom_pull(task_ids='search_new_images', key='url_list')
+        if not urls:
+            logger.info("No URLs to process.")
+            return
+        
+        with TaskGroup(group_id='batch_processing', tooltip="Batch Download and Import Tasks") as batch_group:
+            for idx, url in enumerate(urls):
+                #filename = url.split('/')[-1]
+                #file_path = os.path.join(shared_dir, filename)
+            
 
+                # Define the task
+                download_task = PythonOperator(
+                    task_id=f'download_{idx}',
+                    python_callable=download_url,
+                    op_kwargs={'url': url},
+                    provide_context=True,
+                    do_xcom_push=True,
+                    #dag=dag,
+                )
+
+                # Import task on HPC
+                # import_task = SSHOperator(
+                #     task_id=f'import_{idx}',
+                #     ssh_conn_id='slurm_ssh_connection',
+                #     command=f"module load sdc_testing && cd {shared_dir} && python ~/workspace/updateSentinel_fromSara_new.py --task import --sentinel 2 --inputfile {url} --shared_dir {shared_dir}",
+                # )
+                
+                # Set dependency within each batch
+                download_task #>> import_task
+        
+        return batch_group
+    
+    # Batch processing task
+    download_and_import = PythonOperator(
+        task_id='create_batch_tasks',
+        python_callable=create_batch_tasks,
+        provide_context=True,
+    )
     # download_files = SSHOperator(
     #     task_id='download_files',
     #     ssh_conn_id= 'aarnet_ssh_connection',
@@ -426,7 +436,7 @@ def daily_sentinel_batch_AARNet_processing_dag():
     # # Link the start task to the task group
     # download_files >> get_new_list >> process_date_group()
     
-    search_files >> download_files #>> import_files
+    search_files >> download_and_import #>> import_files
 
 dag_instance = daily_sentinel_batch_AARNet_processing_dag()
 
