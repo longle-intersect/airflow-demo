@@ -69,8 +69,8 @@ def searching(**context):
         # Define the command
         command = (
             'cd /mnt/scratch_lustre/tmp/rs_testing/tmp_shared &&'
-            'python ~/workspace/updateSentinel_fromSara_new.py --task search --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"'
- 
+            'python ~/workspace/updateSentinel_fromSara_new.py --task search --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C" &&'
+            'chmod 777 /mnt/scratch_lustre/tmp/rs_testing/tmp_shared/sara_urls.txt'
         )
         logger.info(f"Executing command: {command}")
 
@@ -140,7 +140,7 @@ def importing(**context):
         # Define the command
         command = (
             'module load sdc_testing &&'
-            'cd $FILESTORE_PATH/tmp_shared &&'
+            'cd /mnt/scratch_lustre/tmp/rs_testing/tmp_shared &&'
             'python ~/workspace/updateSentinel_fromSara_new.py --task import --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"'
  
         )
