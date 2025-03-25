@@ -72,7 +72,7 @@ def searching(**context):
         # Define the command
         command = (
             f'cd {shared_dir} &&'
-            'python ~/workspace/updateSentinel_fromSara_new.py --task search --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C" &&'
+            'python ~/workspace/updateSentinel_fromSara_new.py --task search --sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 --numdownloadthreads 4  --logdownloadspeed --saraparam "processingLevel=L1C"'
             #'chmod 777 /mnt/scratch_lustre/tmp/rs_testing/tmp_shared/sara_urls.txt'
         )
         logger.info(f"Executing command: {command}")
