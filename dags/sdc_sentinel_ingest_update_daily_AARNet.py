@@ -201,7 +201,7 @@ def importing(**context):
             ssh_client.close()
 
 
-def download_files(**kwargs):
+def downloading(**context):
     shared_dir = "/mnt/scratch_lustre/tmp/rs_testing/tmp_shared"  # Shared filestore between HPC and AARNet
     urls_file = os.path.join(shared_dir, "sara_urls.txt")
     downloaded_files = os.path.join(shared_dir, "downloaded_files.txt")
@@ -300,8 +300,8 @@ def daily_sentinel_batch_AARNet_processing_dag():
 
     # Download task (runs on Airflow worker with SSHHook to AARNet)
     download_files = PythonOperator(
-        task_id='download_files',
-        python_callable=download_files,
+        task_id='download_images',
+        python_callable=downloading,
         provide_context=True,
         #dag=dag
     )
