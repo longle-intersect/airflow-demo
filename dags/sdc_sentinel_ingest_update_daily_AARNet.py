@@ -261,15 +261,14 @@ default_args = {
 }
 
 
-with DAG(
-    dag_id='sdc_sentinel_batch_ingest_update_daily_AARNet',
-    default_args=default_args,
-    description='Daily Ingest with AARNet and Update Sentinel-2 Imagery using TaskGroup 4 on SDC',
-    schedule_interval=None,
-    start_date=days_ago(1),
-    tags=['sdc', 'sentinel', 'daily'],
-    concurrency=4  # Limit parallelism to 4 batches
-) as dag:
+@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_AARNet',
+     default_args=default_args,
+     description='Daily Ingest with AARNet and Update Sentinel-2 Imagery using TaskGroup 4 on SDC',
+     schedule_interval=None,
+     start_date=days_ago(1),
+     concurrency = 4,
+     tags=['sdc', 'sentinel', 'daily'])
+def daily_sentinel_batch_AARNet_processing_dag():
 
     # Define the task
     search_files = PythonOperator(
@@ -280,19 +279,20 @@ with DAG(
     )
 
     # Function to create TaskGroup for batch processing
+    @task_group(group_id="batch_processing")
     def create_batch_tasks(**context):
         urls = context['ti'].xcom_pull(task_ids='search_new_images', key='url_list')
         if not urls:
             logger.info("No URLs to process.")
             return
         
-        with TaskGroup(group_id='batch_processing', tooltip="Batch Download and Import Tasks") as batch_group:
-            for idx, url in enumerate(urls):
+       # with TaskGroup(group_id='batch_processing', tooltip="Batch Download and Import Tasks") as batch_group:
+        for idx, url in enumerate(urls):
                 #filename = url.split('/')[-1]
                 #file_path = os.path.join(shared_dir, filename)
             
-
-                # Define the task
+            @task_group(group_id=f'download_import_{idx}', tooltip="Batch Download and Import Tasks")
+            def download_and_import_url(url):     # Define the task
                 download_task = PythonOperator(
                     task_id=f'download_{idx}',
                     python_callable=download_url,
@@ -311,15 +311,15 @@ with DAG(
                 
                 # Set dependency within each batch
                 download_task #>> import_task
-        
-        return batch_group
+
+            download_and_import_url(url)
     
     # Batch processing task
-    download_and_import = PythonOperator(
-        task_id='create_batch_tasks',
-        python_callable=create_batch_tasks,
-        provide_context=True,
-    )
+    # download_and_import = PythonOperator(
+    #     task_id='create_batch_tasks',
+    #     python_callable=create_batch_tasks,
+    #     provide_context=True,
+    # )
     # download_files = SSHOperator(
     #     task_id='download_files',
     #     ssh_conn_id= 'aarnet_ssh_connection',
@@ -438,6 +438,8 @@ with DAG(
     # # Link the start task to the task group
     # download_files >> get_new_list >> process_date_group()
     
-    search_files >> download_and_import #>> import_files
+    search_files >> create_batch_tasks()
+
+dag_instance = daily_sentinel_batch_AARNet_processing_dag()
 
 
