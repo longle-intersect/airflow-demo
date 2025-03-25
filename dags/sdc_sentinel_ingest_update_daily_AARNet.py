@@ -132,60 +132,6 @@ def searching(**context):
             logger.info("Closing SSH connection")
             ssh_client.close()
 
-def downloading(**context):
-    shared_dir = "/mnt/scratch_lustre/tmp/rs_testing/tmp_shared"  # Shared filestore between HPC and AARNet
-    urls_file = os.path.join(local_tmp_path, "sara_urls.txt")
-    downloaded_files = os.path.join(local_tmp_path, "downloaded_files.txt")
-    max_concurrent = 2  # Adjust based on AARNet capacity
-    
-    # Initialize SSHHook for AARNet
-    aarnet_hook = SSHHook(ssh_conn_id='aarnet_ssh_connection')
-    
-    # Read URLs from file
-    with open(urls_file, 'r') as f:
-        urls = [line.strip() for line in f.readlines() if line.strip()]
-    
-    if not urls:
-        print("No URLs to download.")
-        return
-    
-    # Remove existing downloaded_files list
-    if os.path.exists(downloaded_files):
-        os.remove(downloaded_files)
-    
-    def download_url(url):
-        filename = url.split('/')[-1]
-        curl_cmd = f"cd {shared_dir} && curl -n -L -O -J --silent --show-error {url}"
-        
-        # Execute curl on AARNet using SSHHook
-        try:
-            ssh_client = aarnet_hook.get_conn()
-            stdin, stdout, stderr = ssh_client.exec_command(curl_cmd)
-            exit_status = stdout.channel.recv_exit_status()  # Wait for command to complete
-            stderr_output = stderr.read().decode().strip()
-            
-            if exit_status != 0 or stderr_output:
-                print(f"Failed to download {filename}: {stderr_output}")
-                return None
-            return filename
-        finally:
-            ssh_client.close()
-    
-    # Run downloads in parallel
-    downloaded = []
-    with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
-        future_to_url = {executor.submit(download_url, url): url for url in urls}
-        for future in as_completed(future_to_url):
-            result = future.result()
-            if result:
-                downloaded.append(result)
-    
-    # Write successful downloads to file
-    with open(downloaded_files, 'w') as f:
-        f.write('\n'.join(downloaded))
-    print(f"Downloaded {len(downloaded)} files to {shared_dir}, listed in {downloaded_files}")
-
-
 def download_url(url, **context):
 
     # Initialize SSHHook for AARNet
@@ -280,8 +226,14 @@ def daily_sentinel_batch_AARNet_processing_dag():
 
     # Function to create TaskGroup for batch processing
     @task_group(group_id="batch_processing")
-    def create_batch_tasks(**context):
-        urls = context['ti'].xcom_pull(task_ids='search_new_images', key='url_list')
+    def create_batch_tasks():
+        #urls = context['ti'].xcom_pull(task_ids='search_new_images', key='url_list')
+        urls_file = os.path.join(local_tmp_path, "sara_urls.txt")
+        
+        # Read URLs from file
+        with open(urls_file, 'r') as f:
+            urls = [line.strip() for line in f.readlines() if line.strip()]
+
         if not urls:
             logger.info("No URLs to process.")
             return
@@ -314,6 +266,10 @@ def daily_sentinel_batch_AARNet_processing_dag():
 
             download_and_import_url(url)
     
+    search_files >> create_batch_tasks()
+
+dag_instance = daily_sentinel_batch_AARNet_processing_dag()
+
     # Batch processing task
     # download_and_import = PythonOperator(
     #     task_id='create_batch_tasks',
@@ -437,9 +393,60 @@ def daily_sentinel_batch_AARNet_processing_dag():
 
     # # Link the start task to the task group
     # download_files >> get_new_list >> process_date_group()
+
+
+
+
+def downloading(**context):
+    shared_dir = "/mnt/scratch_lustre/tmp/rs_testing/tmp_shared"  # Shared filestore between HPC and AARNet
+    urls_file = os.path.join(local_tmp_path, "sara_urls.txt")
+    downloaded_files = os.path.join(local_tmp_path, "downloaded_files.txt")
+    max_concurrent = 2  # Adjust based on AARNet capacity
     
-    search_files >> create_batch_tasks()
-
-dag_instance = daily_sentinel_batch_AARNet_processing_dag()
-
+    # Initialize SSHHook for AARNet
+    aarnet_hook = SSHHook(ssh_conn_id='aarnet_ssh_connection')
+    
+    # Read URLs from file
+    with open(urls_file, 'r') as f:
+        urls = [line.strip() for line in f.readlines() if line.strip()]
+    
+    if not urls:
+        print("No URLs to download.")
+        return
+    
+    # Remove existing downloaded_files list
+    if os.path.exists(downloaded_files):
+        os.remove(downloaded_files)
+    
+    def download_url(url):
+        filename = url.split('/')[-1]
+        curl_cmd = f"cd {shared_dir} && curl -n -L -O -J --silent --show-error {url}"
+        
+        # Execute curl on AARNet using SSHHook
+        try:
+            ssh_client = aarnet_hook.get_conn()
+            stdin, stdout, stderr = ssh_client.exec_command(curl_cmd)
+            exit_status = stdout.channel.recv_exit_status()  # Wait for command to complete
+            stderr_output = stderr.read().decode().strip()
+            
+            if exit_status != 0 or stderr_output:
+                print(f"Failed to download {filename}: {stderr_output}")
+                return None
+            return filename
+        finally:
+            ssh_client.close()
+    
+    # Run downloads in parallel
+    downloaded = []
+    with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+        future_to_url = {executor.submit(download_url, url): url for url in urls}
+        for future in as_completed(future_to_url):
+            result = future.result()
+            if result:
+                downloaded.append(result)
+    
+    # Write successful downloads to file
+    with open(downloaded_files, 'w') as f:
+        f.write('\n'.join(downloaded))
+    print(f"Downloaded {len(downloaded)} files to {shared_dir}, listed in {downloaded_files}")
 
