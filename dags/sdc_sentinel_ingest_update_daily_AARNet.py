@@ -28,7 +28,8 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger("airflow.task")
 remote_path='/home/lelong/log_airflow_slurm/scripts/'
 local_path='/opt/airflow/slurm_script/' 
-
+local_tmp_path='/opt/airflow/tmp_files/'
+local_metadata_path ='/opt/airflow/tmp_metadata/'
 # Function to parse the output and extract file names
 
 # Function to extract the tile identifier and date from filenames
@@ -102,14 +103,15 @@ def searching(**context):
                 url_file = line.replace('XCOM_URL_FILE:', '').strip()
  
         # Push results to XCom
-        # file_list_name = url_file.split('/')[-1]
+        file_list_name = url_file.split('/')[-1]
 
-        # os.makedirs(local_tmp_path, mode=0o777, exist_ok=True)
-        # sftp_client = ssh_client.open_sftp()
-        # #sftp_client.get(filename_list, local_tmp_path)
-        # local_filelist = local_tmp_path+file_list_name
-        # sftp_client.get(file_list, local_filelist)
-        # sftp_client.close()
+        os.makedirs(local_tmp_path, mode=0o777, exist_ok=True)
+        sftp_client = ssh_client.open_sftp()
+        #sftp_client.get(filename_list, local_tmp_path)
+        remote_filelist = '/mnt/scratch_lustre/tmp/rs_testing/tmp_shared/' + file_list_name
+        local_filelist = local_tmp_path + file_list_name
+        sftp_client.get(remote_filelist, local_filelist)
+        sftp_client.close()
 
         # with open(local_filelist, 'r') as f:
         #     files = [line.strip() for line in f if line.strip()]
@@ -203,8 +205,8 @@ def importing(**context):
 
 def downloading(**context):
     shared_dir = "/mnt/scratch_lustre/tmp/rs_testing/tmp_shared"  # Shared filestore between HPC and AARNet
-    urls_file = os.path.join(shared_dir, "sara_urls.txt")
-    downloaded_files = os.path.join(shared_dir, "downloaded_files.txt")
+    urls_file = os.path.join(local_tmp_path, "sara_urls.txt")
+    downloaded_files = os.path.join(local_tmp_path, "downloaded_files.txt")
     max_concurrent = 2  # Adjust based on AARNet capacity
     
     # Initialize SSHHook for AARNet
