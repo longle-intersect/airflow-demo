@@ -322,7 +322,7 @@ def daily_sentinel_batch_AARNet_processing_dag_1():
                     task_id=f'import_{i}',
                     python_callable=import_file,
                     op_kwargs={
-                        'zipfileName': f'{{{{ ti.xcom_pull(task_ids="download_{i}") if ti.xcom_pull(task_ids="download_{i}") else None }}}}'
+                        'zipfileName': f'{{{{ ti.xcom_pull(task_ids="processing_{i}.download_{i}") }}}}'
                     },
                     provide_context=True,  # Ensures context is passed for XCom access
                 )
