@@ -244,8 +244,8 @@ def import_file(zipfileName: str):
         # Build the command
         command = (
             f'module load sdc_testing && '
-            'cd {shared_dir} && '
-            'python ~/workspace/updateSentinel_fromSara_new.py --task import --zipfile {zipfileName} --shared_dir {shared_dir} '
+            f'cd {shared_dir} && '
+            f'python ~/workspace/updateSentinel_fromSara_new.py --task import --zipfile {zipfileName} --shared_dir {shared_dir} '
             '--sentinel 2 --regionofinterest $RSC_SENTINEL2_DFLT_REGIONOFINTEREST --startdate 2025-03-21 '
             '--numdownloadthreads 4 --logdownloadspeed --saraparam "processingLevel=L1C"'
         )
