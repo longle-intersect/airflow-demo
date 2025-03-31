@@ -334,21 +334,6 @@ def daily_sentinel_batch_AARNet_processing_dag_1():
                     },
                     provide_context=True,  # Ensures context is passed for XCom access
                 )
-
-                    # Task 1: Cloud fmask processing
-                    cloud_fmask_processing = SlurmJobHandlingSensorSentinel(
-                        task_id=f'i{i}_s1',
-                        ssh_conn_id='slurm_ssh_connection',
-                        script_name=f'sentt_{date}_s1',
-                        remote_path=remote_path,
-                        local_path=local_path, 
-                        #stage_script=script_stage_1,
-                        #dag=dag,
-                        timeout=3600,
-                        poke_interval=30,
-                        date = date,
-                        stage = "1"
-                    )
                 
                 download >> import_files
 
