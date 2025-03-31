@@ -280,6 +280,14 @@ def import_file(zipfileName: str):
             logger.info("Closing SSH connection for search")
             ssh_client.close()
 
+def test_download_url(url):
+    logger.info(f"Downloading URL: {url}")
+    return "S2B_MSIL1C_20250329T000219_N0511_R030_T56JLQ_20250329T005127.zip"
+
+def test_import_file(zipfileName):
+    logger.info(f"Importing file: {zipfileName}")
+    return "cfmsre_56jlq"
+
 # DAG Configuration
 default_args = {
     'owner': 'airflow',
@@ -322,7 +330,7 @@ def daily_sentinel_batch_AARNet_processing_dag_1():
                     task_id=f'import_{i}',
                     python_callable=import_file,
                     op_kwargs={
-                        'zipfileName': f'{{{{ ti.xcom_pull(task_ids="processing_{i}.download_{i}") }}}}'
+                        'zipfileName': f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.download_{i}") }}}}'
                     },
                     provide_context=True,  # Ensures context is passed for XCom access
                 )
