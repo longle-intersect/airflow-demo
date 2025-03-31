@@ -1,0 +1,8 @@
+{
+	"remote_path": "/home/lelong/log_airflow_slurm/scripts/",
+	"local_path": "/opt/airflow/slurm_script/", 
+	"local_tmp_path": "/opt/airflow/tmp_files/",
+	"local_metadata_path": "/opt/airflow/tmp_metadata/",
+	"shared_dir": "/mnt/scratch_lustre/tmp/rs_testing/tmp_shared/",
+	"MAX_JOBS": 5
+}
