@@ -16,7 +16,7 @@ from airflow.models import XCom, Variable
 
 # Set up logging
 logger = logging.getLogger("airflow.task")
-remote_path='/home/lelong/slurm_script/'
+remote_path='/home/liuyuey/slurm_script/'
 local_path='/opt/airflow/slurm_script/' 
 
 
@@ -25,7 +25,7 @@ default_args = {
     'depends_on_past': False,
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1,
+    'retries': 0,
     'retry_delay': timedelta(minutes=5),
 }
 
@@ -49,7 +49,7 @@ echo "{kwargs['out_text']}"
     return script_path
 
 
-with DAG('test_slurm_multi_step',
+with DAG('yueyang_test_slurm_multi_step',
          default_args=default_args,
          description='A multi-step DAG to submit and monitor Slurm jobs via SSH',
          schedule_interval=None,
@@ -68,7 +68,7 @@ with DAG('test_slurm_multi_step',
 
     handle_slurm_job_1 = SlurmJobHandlingSensor(
         task_id='handle_slurm_job_1',
-        ssh_conn_id='slurm_ssh_connection',
+        ssh_conn_id='slurm_ssh_connection_yueyang',
         script_name='test_script_1.slurm',
         remote_path=remote_path,
         local_path=local_path,
@@ -87,7 +87,7 @@ with DAG('test_slurm_multi_step',
 
     handle_slurm_job_2 = SlurmJobHandlingSensor(
         task_id='handle_slurm_job_2',
-        ssh_conn_id='slurm_ssh_connection',
+        ssh_conn_id='slurm_ssh_connection_yueyang',
         script_name='test_script_2.slurm',
         remote_path=remote_path,
         local_path=local_path,
@@ -106,7 +106,7 @@ with DAG('test_slurm_multi_step',
 
     handle_slurm_job_3 = SlurmJobHandlingSensor(
         task_id='handle_slurm_job_3',
-        ssh_conn_id='slurm_ssh_connection',
+        ssh_conn_id='slurm_ssh_connection_yueyang',
         script_name='test_script_3.slurm',
         remote_path=remote_path,
         local_path=local_path,
@@ -125,7 +125,7 @@ with DAG('test_slurm_multi_step',
 
     handle_slurm_job_4 = SlurmJobHandlingSensor(
         task_id='handle_slurm_job_4',
-        ssh_conn_id='slurm_ssh_connection',
+        ssh_conn_id='slurm_ssh_connection_yueyang',
         script_name='test_script_4.slurm',
         remote_path=remote_path,
         local_path=local_path,

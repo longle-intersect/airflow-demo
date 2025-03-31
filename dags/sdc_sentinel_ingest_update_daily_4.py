@@ -10,7 +10,7 @@ from airflow.providers.ssh.operators.ssh import SSHOperator
 from datetime import datetime, timedelta
 from airflow.utils.dates import days_ago
 from airflow.operators.python import PythonOperator
-from plugins.slurm_job_handler_new import SlurmJobHandlingSensor
+from plugins.slurm_job_handler_new import SlurmJobHandlingSensorSentinel
 from airflow.utils.task_group import TaskGroup
 from airflow.models.baseoperator import chain
 from airflow.models import XCom, Variable
@@ -105,7 +105,7 @@ def daily_sentinel_batch_ingest_processing_dag():
                     # Create a custom task for each mapped argument
                     
                     # Task 1: Cloud fmask processing
-                    cloud_fmask_processing = SlurmJobHandlingSensor(
+                    cloud_fmask_processing = SlurmJobHandlingSensorSentinel(
                         task_id=f'i{i}_s1',
                         ssh_conn_id='slurm_ssh_connection',
                         script_name=f'sentt_{date}_s1',
@@ -120,7 +120,7 @@ def daily_sentinel_batch_ingest_processing_dag():
                     )
 
                     # Task 2: Topo masks processing
-                    topo_masks_processing = SlurmJobHandlingSensor(
+                    topo_masks_processing = SlurmJobHandlingSensorSentinel(
                         task_id=f'i{i}_s2',
                         ssh_conn_id='slurm_ssh_connection',
                         script_name=f'sentt_{date}_s2',
@@ -136,7 +136,7 @@ def daily_sentinel_batch_ingest_processing_dag():
 
 
                     # Task 3: Surface reflectance processing
-                    surface_reflectance_processing = SlurmJobHandlingSensor(
+                    surface_reflectance_processing = SlurmJobHandlingSensorSentinel(
                         task_id=f'i{i}_s3',
                         ssh_conn_id='slurm_ssh_connection',
                         script_name=f'sentt_{date}_s3',
@@ -151,7 +151,7 @@ def daily_sentinel_batch_ingest_processing_dag():
                     )
 
                     # Task 4: Water index processing
-                    water_index_processing = SlurmJobHandlingSensor(
+                    water_index_processing = SlurmJobHandlingSensorSentinel(
                         task_id=f'i{i}_s4',
                         ssh_conn_id='slurm_ssh_connection',
                         script_name=f'sentt_{date}_s4',
@@ -166,7 +166,7 @@ def daily_sentinel_batch_ingest_processing_dag():
                     )
 
                     # Task 5: Fractional cover processing
-                    fractional_cover_processing = SlurmJobHandlingSensor(
+                    fractional_cover_processing = SlurmJobHandlingSensorSentinel(
                         task_id=f'i{i}_s5',
                         ssh_conn_id='slurm_ssh_connection',
                         script_name=f'sentt_{date}_s5',

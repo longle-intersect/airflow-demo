@@ -19,12 +19,12 @@ This is useful if in poke mode, where poking slurm or other queue occurs before
 the job is registered in the queue.
 """
 
-class SlurmJobHandlingSensor(BaseSensorOperator):
+class SlurmJobHandlingSensorGPU(BaseSensorOperator):
     template_fields = ('script_name', 'remote_path')
 
     @apply_defaults
     def __init__(self, ssh_conn_id, script_name, remote_path, local_path, *args, **kwargs):
-        super(SlurmJobHandlingSensor, self).__init__(*args, **kwargs)
+        super(SlurmJobHandlingSensorGPU, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
         self.script_name = script_name
         self.remote_path = remote_path
@@ -50,9 +50,9 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             context['task_instance'].xcom_push(key='error_content', value=error_content)
             self.log.info(f"Output of {self.job_id}: {output_content}")
 
-            if error_content:
-                self.log.error(f"Error for job {self.job_id}: {error_content}")
-                raise AirflowException('Error in Slurm job execution: Task failed because of upstream errors')
+            # if error_content:
+            #     self.log.error(f"Error for job {self.job_id}: {error_content}")
+            #     raise AirflowException('Error in Slurm job execution: Task failed because of upstream errors')
  
             return True
         else:
@@ -71,10 +71,21 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
             sftp_client.put(local_script_path, remote_script_path)
             sftp_client.close()
 
-            command = f'sbatch --output={remote_output_path} --error={remote_error_path} {remote_script_path}'
+            # command = f'module unload RSstandard'
+            # stdin, stdout, stderr = ssh_client.exec_command(command)
+            # command = f'module load slurm'
+            # stdin, stdout, stderr = ssh_client.exec_command(command)
+            # command = f'sbatch --output={remote_output_path} --error={remote_error_path} {remote_script_path}'
+            # stdin, stdout, stderr = ssh_client.exec_command(command)
+            # run multiple commands
+            command = f'module unload RSstandard; module load slurm; sbatch --output={remote_output_path} --error={remote_error_path} {remote_script_path}'
             stdin, stdout, stderr = ssh_client.exec_command(command)
-            job_info = stdout.read().decode('utf-8').strip()
-            job_id = job_info.split()[-1]  # Assumes Slurm outputs "Submitted batch job <job_id>"
+            try:
+                job_info = stdout.read().decode('utf-8').strip()
+                job_id = job_info.split()[-1]  # Assumes Slurm outputs "Submitted batch job <job_id>"
+            except IndexError:
+                job_info = stderr.read().decode('utf-8').strip()
+                raise AirflowException(f"Error submitting job: {job_info}")
             return job_id
 
     def _check_job_status(self):
@@ -120,7 +131,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
 
 class AirflowJobSchedulerPlugin(AirflowPlugin):
     name = 'slurm_job_handler_basic'
-    operators = [SlurmJobHandlingSensor]
+    operators = [SlurmJobHandlingSensorGPU]
     hooks = []
     executors = []
     macros = []

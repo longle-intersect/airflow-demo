@@ -17,7 +17,7 @@ from airflow.providers.ssh.hooks.ssh import SSHHook
 from airflow.utils.dates import days_ago
 from airflow.operators.python import PythonOperator
 from airflow.exceptions import AirflowException
-from plugins.slurm_job_handler_new import SlurmJobHandlingSensor
+from plugins.slurm_job_handler_new import SlurmJobHandlingSensorSentinel
 from airflow.utils.task_group import TaskGroup
 from airflow.models.baseoperator import chain
 from airflow.models import XCom, Variable

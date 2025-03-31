@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from airflow.utils.dates import days_ago
 from airflow.operators.python import PythonOperator
 from airflow.operators.dummy import DummyOperator
-from plugins.slurm_job_handler_new import SlurmJobHandlingSensor
+from plugins.slurm_job_handler_new import SlurmJobHandlingSensorSentinel
 from airflow.utils.task_group import TaskGroup
 from airflow.models.baseoperator import chain
 from airflow.models import XCom, Variable

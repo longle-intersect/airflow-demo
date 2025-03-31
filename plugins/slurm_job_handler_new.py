@@ -21,7 +21,7 @@ This is useful if in poke mode, where poking slurm or other queue occurs before
 the job is registered in the queue.
 """
 
-class SlurmJobHandlingSensor(BaseSensorOperator):
+class SlurmJobHandlingSensorSentinel(BaseSensorOperator):
     template_fields = ('date', 'processing_stage')
 
     @apply_defaults
@@ -33,7 +33,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
         If a failure of any kind occurs (such as a timeout) then the job is
         removed from the queue.
         """        
-        super(SlurmJobHandlingSensor, self).__init__(*args, **kwargs)
+        super(SlurmJobHandlingSensorSentinel, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
         #self.script_id = script_name
         self.script_id = f'sentt_{date}'
@@ -150,7 +150,7 @@ class SlurmJobHandlingSensor(BaseSensorOperator):
 
 class AirflowJobSchedulerPlugin(AirflowPlugin):
     name = 'slurm_job_handler_sentinel'
-    operators = [SlurmJobHandlingSensor]
+    operators = [SlurmJobHandlingSensorSentinel]
     hooks = []
     executors = []
     macros = []
