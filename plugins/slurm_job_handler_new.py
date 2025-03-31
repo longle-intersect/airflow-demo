@@ -22,7 +22,7 @@ the job is registered in the queue.
 """
 
 class SlurmJobHandlingSensorSentinel(BaseSensorOperator):
-    template_fields = ('date', 'processing_stage')
+    template_fields = ('date', 'script_name', 'processing_stage')
 
     @apply_defaults
     def __init__(self, ssh_conn_id, script_name, remote_path, local_path,
@@ -36,7 +36,7 @@ class SlurmJobHandlingSensorSentinel(BaseSensorOperator):
         super(SlurmJobHandlingSensorSentinel, self).__init__(*args, **kwargs)
         self.ssh_conn_id = ssh_conn_id
         #self.script_id = script_name
-        self.script_id = f'sentt_{date}'
+        self.script_id = script_name #f'sentt_{date}'
         self.script_name = self.script_id + "_s" + stage + ".slurm"
         self.remote_path = remote_path
         self.local_path = local_path

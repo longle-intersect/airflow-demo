@@ -339,7 +339,7 @@ def daily_sentinel_batch_AARNet_processing_dag_1():
                 cloud_fmask_processing = SlurmJobHandlingSensorSentinel(
                     task_id=f'i{i}_s1',
                     ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}_s1',
+                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
                     remote_path=remote_path,
                     local_path=local_path, 
                     #stage_script=script_stage_1,
@@ -347,14 +347,15 @@ def daily_sentinel_batch_AARNet_processing_dag_1():
                     timeout=3600,
                     poke_interval=30,
                     date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    stage = "1"
+                    stage = "1",
+                    #provide_context=True,  # Ensures context is passed for XCom access
                 )
 
                 # Task 2: Topo masks processing
                 topo_masks_processing = SlurmJobHandlingSensorSentinel(
                     task_id=f'i{i}_s2',
                     ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}_s2',
+                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
                     remote_path=remote_path,
                     local_path=local_path, 
                     #stage_script=script_stage_1,
@@ -363,6 +364,7 @@ def daily_sentinel_batch_AARNet_processing_dag_1():
                     poke_interval=30,
                     date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
                     stage = "2",       
+                    #provide_context=True,
                 )
 
 
@@ -370,7 +372,7 @@ def daily_sentinel_batch_AARNet_processing_dag_1():
                 surface_reflectance_processing = SlurmJobHandlingSensorSentinel(
                     task_id=f'i{i}_s3',
                     ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}_s3',
+                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
                     remote_path=remote_path,
                     local_path=local_path, 
                     #stage_script=script_stage_1,
@@ -378,14 +380,15 @@ def daily_sentinel_batch_AARNet_processing_dag_1():
                     timeout=3600,
                     poke_interval=30,
                     date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    stage = "3",      
+                    stage = "3",   
+                   #provide_context=True,   
                 )
 
                 # Task 4: Water index processing
                 water_index_processing = SlurmJobHandlingSensorSentinel(
                     task_id=f'i{i}_s4',
                     ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}_s4',
+                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
                     remote_path=remote_path,
                     local_path=local_path, 
                     #stage_script=script_stage_1,
@@ -393,14 +396,15 @@ def daily_sentinel_batch_AARNet_processing_dag_1():
                     timeout=3600,
                     poke_interval=30,
                     date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    stage = "4",      
+                    stage = "4",    
+                    #provide_context=True,  
                 )
 
                 # Task 5: Fractional cover processing
                 fractional_cover_processing = SlurmJobHandlingSensorSentinel(
                     task_id=f'i{i}_s5',
                     ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}_s5',
+                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
                     remote_path=remote_path,
                     local_path=local_path, 
                     #stage_script=script_stage_1,
@@ -408,7 +412,8 @@ def daily_sentinel_batch_AARNet_processing_dag_1():
                     timeout=3600,
                     poke_interval=30,
                     date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    stage = "5",      
+                    stage = "5",   
+                    #provide_context=True,   
                 )
 
                 download >> import_files >> cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
