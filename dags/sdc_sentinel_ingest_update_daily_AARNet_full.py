@@ -216,6 +216,7 @@ def get_file_name(filename):
     pattern = re.compile(r"T\d{2}[A-Z]{3}_\d{8}")
     # Extract the tile identifier and date
     match = pattern.search(filename)
+    qvf_name = None
     if match:
         extracted = match.group(0).lower()
         # Prepend based on the prefix
@@ -225,8 +226,6 @@ def get_file_name(filename):
             qvf_name = "cfmsre_" + extracted
         elif filename.startswith("S2C"):
             qvf_name = "cgmsre_" + extracted
-        else:
-            return None
 
     return qvf_name
 
