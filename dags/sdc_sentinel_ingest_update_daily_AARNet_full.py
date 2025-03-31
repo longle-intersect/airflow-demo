@@ -334,8 +334,84 @@ def daily_sentinel_batch_AARNet_processing_dag_1():
                     },
                     provide_context=True,  # Ensures context is passed for XCom access
                 )
-                
-                download >> import_files
+
+                # Task 1: Cloud fmask processing
+                cloud_fmask_processing = SlurmJobHandlingSensorSentinel(
+                    task_id=f'i{i}_s1',
+                    ssh_conn_id='slurm_ssh_connection',
+                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}_s1',
+                    remote_path=remote_path,
+                    local_path=local_path, 
+                    #stage_script=script_stage_1,
+                    #dag=dag,
+                    timeout=3600,
+                    poke_interval=30,
+                    date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
+                    stage = "1"
+                )
+
+                # Task 2: Topo masks processing
+                topo_masks_processing = SlurmJobHandlingSensorSentinel(
+                    task_id=f'i{i}_s2',
+                    ssh_conn_id='slurm_ssh_connection',
+                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}_s2',
+                    remote_path=remote_path,
+                    local_path=local_path, 
+                    #stage_script=script_stage_1,
+                    #dag=dag,
+                    timeout=3600,
+                    poke_interval=30,
+                    date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
+                    stage = "2",       
+                )
+
+
+                # Task 3: Surface reflectance processing
+                surface_reflectance_processing = SlurmJobHandlingSensorSentinel(
+                    task_id=f'i{i}_s3',
+                    ssh_conn_id='slurm_ssh_connection',
+                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}_s3',
+                    remote_path=remote_path,
+                    local_path=local_path, 
+                    #stage_script=script_stage_1,
+                    #dag=dag,
+                    timeout=3600,
+                    poke_interval=30,
+                    date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
+                    stage = "3",      
+                )
+
+                # Task 4: Water index processing
+                water_index_processing = SlurmJobHandlingSensorSentinel(
+                    task_id=f'i{i}_s4',
+                    ssh_conn_id='slurm_ssh_connection',
+                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}_s4',
+                    remote_path=remote_path,
+                    local_path=local_path, 
+                    #stage_script=script_stage_1,
+                    #dag=dag,
+                    timeout=3600,
+                    poke_interval=30,
+                    date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
+                    stage = "4",      
+                )
+
+                # Task 5: Fractional cover processing
+                fractional_cover_processing = SlurmJobHandlingSensorSentinel(
+                    task_id=f'i{i}_s5',
+                    ssh_conn_id='slurm_ssh_connection',
+                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}_s5',
+                    remote_path=remote_path,
+                    local_path=local_path, 
+                    #stage_script=script_stage_1,
+                    #dag=dag,
+                    timeout=3600,
+                    poke_interval=30,
+                    date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
+                    stage = "5",      
+                )
+
+                download >> import_files >> cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
 
     search_files >> tg
     
