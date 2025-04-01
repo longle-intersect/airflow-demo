@@ -134,7 +134,7 @@ def search_new_images():
         # Convert the URL list string to an actual Python list.
         urls = ast.literal_eval(url_list)
         #return {"urls": urls, "url_file": url_file}
-        return urls
+        return urls[:3]
 
     except Exception as e:
         logger.error(f"Task failed with exception: {str(e)}", exc_info=True)
@@ -150,10 +150,6 @@ def download_url(url: str):
     Download the content from a given URL via SSH using a curl command.
     First it sends a HEAD request to resolve the final URI and then downloads the file.
     """
-    if url == "None":
-        logger.info("No url provided, skipping task.")
-        raise AirflowSkipException("No URL provided")
-    
     logger.info(f"Starting download task for URL: {url}")
     aarnet_hook = SSHHook(ssh_conn_id='aarnet_ssh_connection')
     curl_cmd_filename = f"cd {shared_dir} && curl --silent -n --location --head {url}"
@@ -286,10 +282,18 @@ def import_file(zipfileName: str):
             ssh_client.close()
 
 def test_download_url(url):
+    if url == "None":
+        logger.info("No url provided, skipping task.")
+        raise AirflowSkipException("No URL provided")
+        #return None
     logger.info(f"Downloading URL: {url}")
     return "S2B_MSIL1C_20250329T000219_N0511_R030_T56JLQ_20250329T005127.zip"
 
 def test_import_file(zipfileName):
+    if not zipfileName:
+        logger.info("No zipfile provided, skipping task.")
+        raise AirflowSkipException("No zipfile provided")
+        #return None
     logger.info(f"Importing file: {zipfileName}")
     return "cfmsre_56jlq"
 
@@ -305,9 +309,9 @@ default_args = {
 }
 
 
-@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_AARNet_full',
+@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_AARNet_test',
      default_args=default_args,
-     description='Daily Ingest with AARNet and Update Sentinel-2 Imagery using TaskGroup on SDC full processing',
+     description='Daily Ingest with AARNet and Update Sentinel-2 Imagery using TaskGroup on SDC test processing',
      schedule_interval=None,
      start_date=days_ago(1),
      concurrency = 4,
@@ -324,106 +328,22 @@ def daily_sentinel_batch_AARNet_processing_dag_1():
             with TaskGroup(f"processing_{i}") as pg:
                 download = PythonOperator(
                     task_id=f'download_{i}',
-                    python_callable=download_url,
+                    python_callable=test_download_url,
                     op_kwargs={
-                        #'url': f'{{{{ ti.xcom_pull(task_ids="search_new_images")[{i}] if ti.xcom_pull(task_ids="search_new_images") else None }}}}'
-                        'url': f'{{{{ ti.xcom_pull(task_ids="search_new_images")[{i}] if ti.xcom_pull(task_ids="search_new_images") and {i} < ti.xcom_pull(task_ids="search_new_images")|length else None }}}}'
-                    },
+                        'url': f'{{{{ ti.xcom_pull(task_ids="search_new_images")[{i}] if ti.xcom_pull(task_ids="search_new_images") and {i} < ti.xcom_pull(task_ids="search_new_images")|length else None }}}}'                    },
                     provide_context=True,  # Ensures context is passed for XCom access
                 )
 
                 import_files = PythonOperator(
                     task_id=f'import_{i}',
-                    python_callable=import_file,
+                    python_callable=test_import_file,
                     op_kwargs={
                         'zipfileName': f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.download_{i}") }}}}'
                     },
                     provide_context=True,  # Ensures context is passed for XCom access
                 )
 
-                # Task 1: Cloud fmask processing
-                cloud_fmask_processing = SlurmJobHandlingSensorSentinel(
-                    task_id=f'i{i}_s1',
-                    ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    remote_path=remote_path,
-                    local_path=local_path, 
-                    #stage_script=script_stage_1,
-                    #dag=dag,
-                    timeout=3600,
-                    poke_interval=30,
-                    date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    stage = "1",
-                    #provide_context=True,  # Ensures context is passed for XCom access
-                )
-
-                # Task 2: Topo masks processing
-                topo_masks_processing = SlurmJobHandlingSensorSentinel(
-                    task_id=f'i{i}_s2',
-                    ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    remote_path=remote_path,
-                    local_path=local_path, 
-                    #stage_script=script_stage_1,
-                    #dag=dag,
-                    timeout=3600,
-                    poke_interval=30,
-                    date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    stage = "2",       
-                    #provide_context=True,
-                )
-
-
-                # Task 3: Surface reflectance processing
-                surface_reflectance_processing = SlurmJobHandlingSensorSentinel(
-                    task_id=f'i{i}_s3',
-                    ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    remote_path=remote_path,
-                    local_path=local_path, 
-                    #stage_script=script_stage_1,
-                    #dag=dag,
-                    timeout=3600,
-                    poke_interval=30,
-                    date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    stage = "3",   
-                   #provide_context=True,   
-                )
-
-                # Task 4: Water index processing
-                water_index_processing = SlurmJobHandlingSensorSentinel(
-                    task_id=f'i{i}_s4',
-                    ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    remote_path=remote_path,
-                    local_path=local_path, 
-                    #stage_script=script_stage_1,
-                    #dag=dag,
-                    timeout=3600,
-                    poke_interval=30,
-                    date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    stage = "4",    
-                    #provide_context=True,  
-                )
-
-                # Task 5: Fractional cover processing
-                fractional_cover_processing = SlurmJobHandlingSensorSentinel(
-                    task_id=f'i{i}_s5',
-                    ssh_conn_id='slurm_ssh_connection',
-                    script_name=f'sentt_{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    remote_path=remote_path,
-                    local_path=local_path, 
-                    #stage_script=script_stage_1,
-                    #dag=dag,
-                    timeout=3600,
-                    poke_interval=30,
-                    date = f'{{{{ ti.xcom_pull(task_ids="batch_processing.processing_{i}.import_{i}") }}}}',
-                    stage = "5",   
-                    #provide_context=True,   
-                )
-
-                download >> import_files >> cloud_fmask_processing >> topo_masks_processing >> surface_reflectance_processing >> water_index_processing >> fractional_cover_processing
-
+                download >> import_files
     search_files >> tg
     
 dag_instance = daily_sentinel_batch_AARNet_processing_dag_1()

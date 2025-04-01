@@ -53,10 +53,10 @@ def generate_script_stage(date, stage):
 fileab0=$(ls {date}_ab0*.img 2>/dev/null | head -n 1)
 
 # Check if file exist
-if [ -z "$fileab0" ]; then
-    echo "Failed at stage 1: Required input files not found."
-    exit 1
-fi
+# if [ -z "$fileab0" ]; then
+#    echo "Failed at stage 1: Required input files not found."
+#    exit 1
+# fi
 
 qv_sentinel2cloud_fmask.py --toaref10 $fileab0
 if [ $? -ne 0 ]; then
@@ -100,10 +100,10 @@ fileaba=$(ls {date}_aba*.img 2>/dev/null | head -n 1)
 fileabb=$(ls {date}_abb*.img 2>/dev/null | head -n 1)
 
 # Check if both files exist
-if [ -z "$fileaba" ] || [ -z "$fileabb" ]; then
-    echo "Failed at stage 4: Required input files not found."
-    exit 1
-fi
+# if [ -z "$fileaba" ] || [ -z "$fileabb" ]; then
+#    echo "Failed at stage 4: Required input files not found."
+#    exit 1
+# fi
 
 qv_water_index2015.py "$fileaba" "$fileabb" --omitothermasks
 if [ $? -ne 0 ]; then

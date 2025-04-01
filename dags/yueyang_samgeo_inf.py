@@ -123,7 +123,7 @@ def convert2geojson_script(**kwargs):
 
 # Specify the work to be done
 source /mnt/scratch_lustre/tmp/rs_testing/virtual_envs/sam/bin/activate
-python sam2_batch_inference.py --input {kwargs['input']} --output {kwargs['output']} --source {kwargs['source']}
+python mask2geojson.py --input {kwargs['input']} --output {kwargs['output']} --source {kwargs['source']}
 deactivate
 """
     script_path = f'{local_path}/{kwargs['script_name']}'
@@ -209,7 +209,10 @@ with DAG('yueyang_samgeo_inf',
     create_geojson = PythonOperator(
         task_id='create_convert2geojson_script',
         python_callable=convert2geojson_script,
-        op_kwargs={'script_name': 'convert2geojson.slurm', 'input': mask_img, 'output': geojson, 'source': dst_img},
+        op_kwargs={'script_name': 'convert2geojson.slurm', 
+                   'input': mask_img.replace('.tif', '.geojson'), 
+                   'output': geojson, 
+                   'source': dst_img},
         provide_context=True,
         dag=dag,
     )
