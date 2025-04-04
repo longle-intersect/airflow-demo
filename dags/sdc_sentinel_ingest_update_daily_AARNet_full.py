@@ -305,7 +305,7 @@ default_args = {
 }
 
 
-@dag(dag_id='sdc_sentinel_batch_ingest_update_daily_AARNet_full',
+@dag(dag_id='sdc_sentinel_update_daily_AARNet_full',
      default_args=default_args,
      description='Daily Ingest with AARNet and Update Sentinel-2 Imagery using TaskGroup on SDC full processing',
      schedule_interval=None,
